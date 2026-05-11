@@ -1,42 +1,37 @@
-## Mudanças solicitadas
+## Objetivo
 
-### 1. Renomear "Administração" → "Gestão" e mover para sidebar
-- Adicionar `SidebarProvider` + `AppSidebar` no `__root.tsx` envolvendo as rotas autenticadas.
-- Sidebar com itens: **Dashboard** (`/`), **Gestão** (`/gestao`), e botão de **Sair**.
-- Botão de colapsar (`SidebarTrigger`) sempre visível no header.
-- Renomear arquivo `src/routes/admin.tsx` → `src/routes/gestao.tsx` e atualizar título para "Gestão".
-- Remover o botão "Admin" antigo do header do dashboard (substituído pela sidebar).
+Separar a tela de Gestão em duas abas: **Cadastro inicial** (dados-base dos participantes, totalmente editáveis) e **Acompanhamento mensal** (já existente, está ótimo).
 
-### 2. Campo Altura no cadastro de participante (cálculo automático do IMC)
-- Adicionar coluna `altura` (numérica, em metros) na tabela `participantes` via migração.
-- Atualizar formulário "Adicionar participante" em Gestão:
-  - Novos campos: **Nome**, **Altura (m)**, **Peso inicial (kg)**, **Circunferência (cm)**.
-  - **IMC inicial calculado automaticamente** = `peso / (altura²)` (exibido como readonly).
-- Na grade de edição mensal: ao digitar **Peso**, o campo **IMC** é recalculado automaticamente usando a altura do participante (continua editável caso queira sobrescrever).
-- Se um participante antigo não tiver altura cadastrada, mostra um aviso e permite preencher inline.
+## Aba 1 — Cadastro inicial
 
-### 3. Pré-preenchimento ao criar/abrir mês
-- Ao clicar em "Criar / abrir mês":
-  - Se já existem medições no mês anterior mais recente, copia para o novo mês os valores de: **peso, imc, circunferência, medicamento, dose, consultas (todas), observação**.
-  - Se não houver mês anterior, usa os valores **iniciais** do participante (peso_inicial, imc_inicial, circunferencia_inicial) como ponto de partida.
-- O usuário ajusta apenas o que mudou e salva.
+Tabela com todos os participantes, cada linha permitindo editar inline:
+- Nome
+- Altura (m)
+- Peso inicial (kg)
+- IMC inicial (calculado automaticamente a partir de peso/altura, somente leitura)
+- Circunferência inicial (cm)
+- Ativo (sim/não)
+- Botão remover
 
-### 4. Cálculo de IMC ao importar planilha (opcional, fallback)
-- Se a planilha trouxer peso mas não IMC, e o participante tiver altura, calcular IMC automaticamente no `UploadDialog`.
+Acima da tabela, formulário "Adicionar participante" (já existe hoje, será movido para esta aba).
+
+Também nesta aba: card "Mês de início do acompanhamento" (já existe, faz mais sentido aqui pois é parte da configuração inicial).
+
+Botão "Salvar alterações iniciais" agrupa todas as edições pendentes em um único save (mesmo padrão da aba de acompanhamento). Ao salvar peso/altura, o `imc_inicial` é recalculado automaticamente.
+
+## Aba 2 — Acompanhamento mensal
+
+Mantém exatamente o que existe hoje: seletor de mês, criar novo mês (pré-preenchido), grade editável de medições mensais, salvar. A coluna "Altura" sai daqui (vai pro cadastro inicial), pois é dado fixo do participante.
+
+## Layout
+
+Usar o componente `Tabs` do shadcn no topo da página `/gestao`:
+- Aba "Cadastro inicial"
+- Aba "Acompanhamento mensal" (default)
 
 ## Detalhes técnicos
 
-**Migração SQL:**
-```sql
-ALTER TABLE public.participantes ADD COLUMN altura numeric;
-```
-(Nullable para não quebrar registros existentes; UI cobra preenchimento ao editar.)
-
-**Arquivos afetados:**
-- `supabase/migrations/...` (nova migração para `altura`)
-- `src/components/app-sidebar.tsx` (novo)
-- `src/routes/__root.tsx` (envolver com SidebarProvider, exceto na rota `/login`)
-- `src/routes/admin.tsx` → renomear para `src/routes/gestao.tsx` + lógica de pré-preenchimento e cálculo de IMC
-- `src/routes/index.tsx` (remover link "Admin" do header, ajustar layout)
-- `src/components/dashboard/UploadDialog.tsx` (cálculo de IMC quando faltar)
-- `src/lib/dashboard-data.ts` (adicionar `altura` no tipo `Participante`)
+- Arquivo único: `src/routes/gestao.tsx` reorganizado em dois sub-componentes (`CadastroInicial`, `Acompanhamento`) compartilhando o `useQuery(["gestao"])` e `refetch`.
+- Edição inicial usa o mesmo padrão de estado pendente (`Record<string, Partial<Participante>>`) + botão Salvar.
+- Sem mudanças de schema — colunas `nome`, `altura`, `peso_inicial`, `imc_inicial`, `circunferencia_inicial`, `ativo` já existem em `participantes`.
+- Sem mudanças nas RLS.
