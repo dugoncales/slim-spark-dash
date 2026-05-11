@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Scale, TrendingDown, TrendingUp, Activity, ArrowDownToLine, Lightbulb, Trophy, Users, LogOut, UploadCloud, Settings, Eye, EyeOff } from "lucide-react";
+import { Scale, TrendingUp, ArrowDownToLine, Lightbulb, Trophy, Users, UploadCloud, Eye, EyeOff } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
