@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Settings2, LogOut } from "lucide-react";
+import { LayoutDashboard, Settings2, LogOut, ShieldCheck } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,16 +13,19 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
-
-const items = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Gestão", url: "/gestao", icon: Settings2 },
-];
+import { useRoles } from "@/hooks/use-roles";
 
 export function AppSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const { signOut, user } = useAuth();
+  const { isGestorSaude, isAdmin } = useRoles();
   const navigate = useNavigate();
+
+  const items = [
+    { title: "Dashboard", url: "/", icon: LayoutDashboard, show: true },
+    { title: "Gestão", url: "/gestao", icon: Settings2, show: isGestorSaude },
+    { title: "Administração", url: "/admin", icon: ShieldCheck, show: isAdmin },
+  ].filter((i) => i.show);
 
   return (
     <Sidebar collapsible="icon">
