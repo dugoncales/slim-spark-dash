@@ -83,7 +83,8 @@ function Admin() {
       for (const [k, v] of Object.entries(fields)) {
         payload[k] = v == null ? null : numericFields.has(k) ? Number(v) : v;
       }
-      const { error } = await supabase.from("medicoes").upsert(payload, { onConflict: "participante_id,mes_referencia" });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await supabase.from("medicoes").upsert(payload as any, { onConflict: "participante_id,mes_referencia" });
       if (error) { toast.error(error.message); return; }
     }
     toast.success("Alterações salvas.");
