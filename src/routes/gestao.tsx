@@ -221,11 +221,24 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
 
       {/* Tabela editável */}
       <Card className="p-3">
-        <div className="flex items-center justify-between mb-3 px-2">
+        <div className="flex items-center justify-between mb-3 px-2 gap-3 flex-wrap">
           <h2 className="font-semibold">Participantes — dados iniciais</h2>
-          <Button onClick={salvarEdicoes} disabled={!Object.keys(edits).length}>
-            <Save className="h-4 w-4 mr-1" />Salvar alterações ({Object.keys(edits).length})
-          </Button>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs">Filtrar por mês de início:</Label>
+            <Select value={filtroMes} onValueChange={setFiltroMes}>
+              <SelectTrigger className="w-[180px] h-8"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__todos">Todos</SelectItem>
+                <SelectItem value="__sem">Sem definição</SelectItem>
+                {Array.from(new Set(participantes.map(p => p.mes_inicio).filter(Boolean) as string[])).sort().map(m => (
+                  <SelectItem key={m} value={m}>{formatMes(m)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={salvarEdicoes} disabled={!Object.keys(edits).length}>
+              <Save className="h-4 w-4 mr-1" />Salvar ({Object.keys(edits).length})
+            </Button>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
@@ -233,6 +246,7 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
               <tr className="text-left">
                 <th className="px-2 py-2">Nº</th>
                 <th className="px-2 py-2">Nome</th>
+                <th className="px-2 py-2">Mês início</th>
                 <th className="px-2 py-2">Altura (m)</th>
                 <th className="px-2 py-2">Peso inicial</th>
                 <th className="px-2 py-2">IMC inicial</th>
@@ -242,10 +256,16 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
               </tr>
             </thead>
             <tbody>
-              {participantes.map(p => (
+              {participantes
+                .filter(p => filtroMes === "__todos" ? true : filtroMes === "__sem" ? !p.mes_inicio : p.mes_inicio === filtroMes)
+                .map(p => {
+                const miEdit = edits[p.id]?.mes_inicio as string | null | undefined;
+                const miVal = miEdit !== undefined ? (miEdit ?? "") : (p.mes_inicio ?? "");
+                return (
                 <tr key={p.id} className="border-t">
                   <td className="px-2 py-1">{p.numero}</td>
                   <td className="px-2 py-1"><Input className="h-8 w-48" value={getVal(p, "nome")} onChange={e => setVal(p.id, "nome", e.target.value)} /></td>
+                  <td className="px-2 py-1"><Input className="h-8 w-32" type="month" value={typeof miVal === "string" ? miVal.slice(0,7) : ""} onChange={e => setVal(p.id, "mes_inicio", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.01" value={getVal(p, "altura")} onChange={e => setVal(p.id, "altura", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "peso_inicial")} onChange={e => setVal(p.id, "peso_inicial", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20 bg-muted" readOnly value={imcLinha(p)} /></td>
@@ -258,9 +278,10 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
                   </td>
                   <td className="px-2 py-1"><Button variant="ghost" size="sm" onClick={() => removerParticipante(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></td>
                 </tr>
-              ))}
+                );
+              })}
               {!participantes.length && (
-                <tr><td colSpan={8} className="text-center text-sm text-muted-foreground py-6">Nenhum participante cadastrado.</td></tr>
+                <tr><td colSpan={9} className="text-center text-sm text-muted-foreground py-6">Nenhum participante cadastrado.</td></tr>
               )}
             </tbody>
           </table>
