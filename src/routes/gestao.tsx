@@ -336,7 +336,8 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
       ? new Map(medicoes.filter(m => m.mes_referencia === mesAnterior).map(m => [m.participante_id, m]))
       : new Map<string, Medicao>();
 
-    const rows = participantes.map(p => {
+    const elegiveis = participantes.filter(p => !p.mes_inicio || p.mes_inicio <= iso);
+    const rows = elegiveis.map(p => {
       const ant = medsAnt.get(p.id);
       if (ant) {
         return {
