@@ -132,8 +132,8 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
   async function addParticipante() {
     const peso = parseFloat(novoPart.peso_inicial);
     const altura = parseFloat(novoPart.altura);
-    if (!novoPart.nome || isNaN(peso) || isNaN(altura) || altura <= 0) {
-      toast.error("Nome, altura e peso iniciais são obrigatórios.");
+    if (!novoPart.nome || isNaN(peso) || isNaN(altura) || altura <= 0 || !novoPart.mes_inicio) {
+      toast.error("Nome, altura, peso e mês de início são obrigatórios.");
       return;
     }
     const imc = calcImc(peso, altura)!;
@@ -145,10 +145,11 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
       peso_inicial: peso,
       imc_inicial: imc,
       circunferencia_inicial: novoPart.circunferencia_inicial ? parseFloat(novoPart.circunferencia_inicial) : null,
+      mes_inicio: `${novoPart.mes_inicio}-01`,
     });
     if (error) { toast.error(error.message); return; }
     toast.success("Participante adicionado.");
-    setNovoPart({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "" });
+    setNovoPart({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: defaultMes });
     refetch();
   }
 
