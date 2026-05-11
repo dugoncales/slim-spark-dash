@@ -26,6 +26,30 @@ function Gestao() {
 
   const { data, refetch, isLoading } = useQuery({ queryKey: ["gestao"], queryFn: fetchAll, enabled: !!session });
 
+  const cfgQ = useQuery({
+    queryKey: ["configuracoes"],
+    enabled: !!session,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("configuracoes").select("*");
+      if (error) throw error;
+      return Object.fromEntries((data ?? []).map(r => [r.chave, r.valor])) as Record<string, string | null>;
+    },
+  });
+  const mesInicio = cfgQ.data?.mes_inicio ?? null;
+  const [mesInicioEdit, setMesInicioEdit] = useState<string>("");
+  useEffect(() => {
+    if (mesInicio) setMesInicioEdit(mesInicio.slice(0, 7));
+  }, [mesInicio]);
+
+  async function salvarMesInicio() {
+    if (!mesInicioEdit) { toast.error("Informe o mês de início."); return; }
+    const iso = `${mesInicioEdit}-01`;
+    const { error } = await supabase.from("configuracoes").upsert({ chave: "mes_inicio", valor: iso, updated_at: new Date().toISOString() });
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Mês de início definido: ${formatMes(iso)}.`);
+    cfgQ.refetch();
+  }
+
   const meses = useMemo(() => {
     if (!data) return [];
     return Array.from(new Set(data.medicoes.map(m => m.mes_referencia))).sort();
