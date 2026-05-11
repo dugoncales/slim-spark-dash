@@ -1,0 +1,1 @@
+ALTER TABLE public.participantes ADD COLUMN altura numeric;

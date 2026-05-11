@@ -117,11 +117,18 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
             circunferencia_inicial: r.circunferencia_inicial,
           }).eq("id", participanteId);
         }
+        // Se IMC não veio mas temos altura cadastrada, calcula
+        let imcMes = r.imc_mes;
+        if ((!imcMes || imcMes === 0) && r.peso_mes) {
+          const { data: partRow } = await supabase.from("participantes").select("altura").eq("id", participanteId).single();
+          const altura = partRow?.altura ? Number(partRow.altura) : null;
+          if (altura && altura > 0) imcMes = Math.round((r.peso_mes / (altura * altura)) * 100) / 100;
+        }
         await supabase.from("medicoes").upsert({
           participante_id: participanteId,
           mes_referencia: mesIso,
           peso: r.peso_mes,
-          imc: r.imc_mes,
+          imc: imcMes,
           circunferencia: r.circunferencia_mes,
           medicamento: r.medicamento,
           dose: r.dose,

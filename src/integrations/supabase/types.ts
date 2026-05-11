@@ -78,6 +78,7 @@ export type Database = {
       }
       participantes: {
         Row: {
+          altura: number | null
           ativo: boolean
           circunferencia_inicial: number | null
           created_at: string
@@ -89,6 +90,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          altura?: number | null
           ativo?: boolean
           circunferencia_inicial?: number | null
           created_at?: string
@@ -100,6 +102,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          altura?: number | null
           ativo?: boolean
           circunferencia_inicial?: number | null
           created_at?: string

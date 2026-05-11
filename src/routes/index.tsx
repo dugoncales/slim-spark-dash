@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Scale, TrendingDown, TrendingUp, Activity, ArrowDownToLine, Lightbulb, Trophy, Users, LogOut, UploadCloud, Settings, Eye, EyeOff } from "lucide-react";
+import { Scale, TrendingUp, ArrowDownToLine, Lightbulb, Trophy, Users, UploadCloud, Eye, EyeOff } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -117,8 +117,6 @@ function Dashboard() {
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="hidden md:inline">{user?.email}</span>
-            <Link to="/admin"><Button variant="ghost" size="sm"><Settings className="h-4 w-4 mr-1" />Admin</Button></Link>
-            <Button variant="ghost" size="sm" onClick={() => signOut().then(() => navigate({ to: "/login" }))}><LogOut className="h-4 w-4" /></Button>
           </div>
         </div>
       </header>

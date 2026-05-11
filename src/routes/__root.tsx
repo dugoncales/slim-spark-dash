@@ -1,8 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Outlet, createRootRouteWithContext, HeadContent, Scripts, Link, useRouter } from "@tanstack/react-router";
+import { Outlet, createRootRouteWithContext, HeadContent, Scripts, Link, useRouter, useRouterState } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 
 function NotFound() {
   return (
@@ -55,9 +57,27 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Outlet />
+        <Shell />
         <Toaster richColors position="top-right" />
       </AuthProvider>
     </QueryClientProvider>
+  );
+}
+
+function Shell() {
+  const path = useRouterState({ select: (r) => r.location.pathname });
+  if (path === "/login") return <Outlet />;
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col min-w-0">
+          <div className="md:hidden h-10 flex items-center border-b px-2">
+            <SidebarTrigger />
+          </div>
+          <Outlet />
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }
