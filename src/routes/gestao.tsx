@@ -419,10 +419,17 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
               </tr>
             </thead>
             <tbody>
-              {participantes.map(p => (
+              {participantes
+                .filter(p => !p.mes_inicio || p.mes_inicio <= mesSel)
+                .map(p => {
+                const isInicio = p.mes_inicio === mesSel;
+                return (
                 <tr key={p.id} className="border-t">
                   <td className="px-2 py-1">{p.numero}</td>
-                  <td className="px-2 py-1 font-medium whitespace-nowrap">{p.nome}</td>
+                  <td className="px-2 py-1 font-medium whitespace-nowrap">
+                    {p.nome}
+                    {isInicio && <span className="ml-1 inline-block px-1.5 py-0.5 rounded bg-primary/15 text-primary text-[10px] font-medium">Início</span>}
+                  </td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "peso")} onChange={e => setVal(p.id, "peso", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20 bg-muted/40" type="number" step="0.01" value={getVal(p, "imc")} onChange={e => setVal(p.id, "imc", e.target.value)} title="Recalculado ao alterar peso" /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "circunferencia")} onChange={e => setVal(p.id, "circunferencia", e.target.value)} /></td>
@@ -434,7 +441,8 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
                   <td className="px-2 py-1"><Input className="h-8 w-14" type="number" value={getVal(p, "consultas_edfisica")} onChange={e => setVal(p.id, "consultas_edfisica", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-48" value={getVal(p, "observacao")} onChange={e => setVal(p.id, "observacao", e.target.value)} /></td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </Card>
