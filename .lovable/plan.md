@@ -1,37 +1,35 @@
 ## Objetivo
 
-Separar a tela de Gestão em duas abas: **Cadastro inicial** (dados-base dos participantes, totalmente editáveis) e **Acompanhamento mensal** (já existente, está ótimo).
+Permitir registrar o **mês de início individual** de cada participante (cada paciente entra em momentos diferentes no programa) e usar essa informação para:
+1. Filtrar a lista do Cadastro inicial por mês de entrada.
+2. **Excluir do cálculo de perda de peso** do Acompanhamento mensal os pacientes que iniciaram exatamente no mês selecionado (ainda não há comparação a fazer).
 
-## Aba 1 — Cadastro inicial
+## Mudanças
 
-Tabela com todos os participantes, cada linha permitindo editar inline:
-- Nome
-- Altura (m)
-- Peso inicial (kg)
-- IMC inicial (calculado automaticamente a partir de peso/altura, somente leitura)
-- Circunferência inicial (cm)
-- Ativo (sim/não)
-- Botão remover
+### 1. Banco de dados
+- Adicionar coluna `mes_inicio` (`date`, nullable) à tabela `participantes`.
+- Backfill: para participantes existentes sem valor, usar a data da primeira `medicao` daquele participante; se não houver, usar o `mes_inicio` global da tabela `configuracoes`.
 
-Acima da tabela, formulário "Adicionar participante" (já existe hoje, será movido para esta aba).
+### 2. Cadastro inicial (`/gestao` → aba Cadastro inicial)
+- **Adicionar participante**: novo campo `Mês de início` (input `month`), obrigatório. Default = mês atual.
+- **Tabela editável**: nova coluna `Mês início` (input `month`) editável por linha; entra no fluxo de `salvarEdicoes`.
+- **Filtro**: novo seletor "Filtrar por mês de início" (Todos / lista de meses distintos) acima da tabela.
+- O card global "Mês de início do acompanhamento" continua existindo como **default** sugerido para novos cadastros, mas não substitui o valor por participante.
 
-Também nesta aba: card "Mês de início do acompanhamento" (já existe, faz mais sentido aqui pois é parte da configuração inicial).
+### 3. Acompanhamento mensal (`/gestao` → aba Acompanhamento)
+- Ao gerar/abrir um mês, **só pré-preencher linhas** para participantes cujo `mes_inicio <= mes selecionado` (os outros ainda não entraram).
+- Mostrar badge "Início neste mês" na linha quando `mes_inicio == mes selecionado`.
 
-Botão "Salvar alterações iniciais" agrupa todas as edições pendentes em um único save (mesmo padrão da aba de acompanhamento). Ao salvar peso/altura, o `imc_inicial` é recalculado automaticamente.
+### 4. Dashboard (`/`)
+- Na construção das `rows` de análise (KPIs de perda, top 3, tabela de peso, gráficos de comparação), **excluir** participantes cujo `mes_inicio == mes selecionado` (linha base = mês atual, sem perda calculável).
+- Estes participantes continuam aparecendo nas abas neutras (Circunferência, Tratamento, Multidisciplinar) marcados como "Mês de entrada" (sem variação).
+- Adicionar nota visual nos KPIs: "X paciente(s) iniciaram neste mês e foram desconsiderados na análise de perda."
 
-## Aba 2 — Acompanhamento mensal
+### 5. Tipos
+- Atualizar `Participante` em `src/lib/dashboard-data.ts` para incluir `mes_inicio: string | null`.
 
-Mantém exatamente o que existe hoje: seletor de mês, criar novo mês (pré-preenchido), grade editável de medições mensais, salvar. A coluna "Altura" sai daqui (vai pro cadastro inicial), pois é dado fixo do participante.
-
-## Layout
-
-Usar o componente `Tabs` do shadcn no topo da página `/gestao`:
-- Aba "Cadastro inicial"
-- Aba "Acompanhamento mensal" (default)
-
-## Detalhes técnicos
-
-- Arquivo único: `src/routes/gestao.tsx` reorganizado em dois sub-componentes (`CadastroInicial`, `Acompanhamento`) compartilhando o `useQuery(["gestao"])` e `refetch`.
-- Edição inicial usa o mesmo padrão de estado pendente (`Record<string, Partial<Participante>>`) + botão Salvar.
-- Sem mudanças de schema — colunas `nome`, `altura`, `peso_inicial`, `imc_inicial`, `circunferencia_inicial`, `ativo` já existem em `participantes`.
-- Sem mudanças nas RLS.
+## Arquivos afetados
+- migration SQL (nova)
+- `src/lib/dashboard-data.ts`
+- `src/routes/gestao.tsx`
+- `src/routes/index.tsx`

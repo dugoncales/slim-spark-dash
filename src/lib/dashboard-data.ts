@@ -9,6 +9,7 @@ export type Participante = {
   imc_inicial: number;
   circunferencia_inicial: number | null;
   ativo: boolean;
+  mes_inicio: string | null;
 };
 
 export function calcImc(peso: number | null | undefined, altura: number | null | undefined): number | null {

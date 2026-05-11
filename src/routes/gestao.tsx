@@ -85,7 +85,10 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
     cfgQ.refetch();
   }
 
-  const [novoPart, setNovoPart] = useState({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "" });
+  const defaultMes = (mesInicio ? mesInicio.slice(0, 7) : new Date().toISOString().slice(0, 7));
+  const [novoPart, setNovoPart] = useState({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: "" });
+  useEffect(() => { if (!novoPart.mes_inicio) setNovoPart(s => ({ ...s, mes_inicio: defaultMes })); }, [defaultMes]);
+  const [filtroMes, setFiltroMes] = useState<string>("__todos");
   const [edits, setEdits] = useState<Record<string, Partial<Participante>>>({});
 
   const imcPreview = (() => {
@@ -129,8 +132,8 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
   async function addParticipante() {
     const peso = parseFloat(novoPart.peso_inicial);
     const altura = parseFloat(novoPart.altura);
-    if (!novoPart.nome || isNaN(peso) || isNaN(altura) || altura <= 0) {
-      toast.error("Nome, altura e peso iniciais são obrigatórios.");
+    if (!novoPart.nome || isNaN(peso) || isNaN(altura) || altura <= 0 || !novoPart.mes_inicio) {
+      toast.error("Nome, altura, peso e mês de início são obrigatórios.");
       return;
     }
     const imc = calcImc(peso, altura)!;
@@ -142,10 +145,11 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
       peso_inicial: peso,
       imc_inicial: imc,
       circunferencia_inicial: novoPart.circunferencia_inicial ? parseFloat(novoPart.circunferencia_inicial) : null,
+      mes_inicio: `${novoPart.mes_inicio}-01`,
     });
     if (error) { toast.error(error.message); return; }
     toast.success("Participante adicionado.");
-    setNovoPart({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "" });
+    setNovoPart({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: defaultMes });
     refetch();
   }
 
@@ -168,9 +172,9 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
       for (const [k, v] of Object.entries(fields)) {
         if (v === null || v === undefined || v === "") payload[k] = null;
         else if (numeric.has(k)) payload[k] = Number(v);
+        else if (k === "mes_inicio") payload[k] = String(v).length === 7 ? `${v}-01` : v;
         else payload[k] = v;
       }
-      // Recalcular IMC inicial se peso ou altura mudaram
       const part = participantes.find(p => p.id === pid)!;
       const novoPeso = "peso_inicial" in payload ? (payload.peso_inicial as number | null) : part.peso_inicial;
       const novaAltura = "altura" in payload ? (payload.altura as number | null) : part.altura;
@@ -204,23 +208,37 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
       {/* Adicionar */}
       <Card className="p-5">
         <h2 className="font-semibold mb-3">Adicionar participante</h2>
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
+        <div className="grid grid-cols-2 md:grid-cols-7 gap-3 items-end">
           <div className="md:col-span-2"><Label>Nome</Label><Input value={novoPart.nome} onChange={e => setNovoPart({ ...novoPart, nome: e.target.value })} /></div>
           <div><Label>Altura (m)</Label><Input type="number" step="0.01" placeholder="1.70" value={novoPart.altura} onChange={e => setNovoPart({ ...novoPart, altura: e.target.value })} /></div>
           <div><Label>Peso inicial (kg)</Label><Input type="number" step="0.1" value={novoPart.peso_inicial} onChange={e => setNovoPart({ ...novoPart, peso_inicial: e.target.value })} /></div>
-          <div><Label>IMC inicial (auto)</Label><Input value={imcPreview} readOnly className="bg-muted" /></div>
+          <div><Label>IMC (auto)</Label><Input value={imcPreview} readOnly className="bg-muted" /></div>
           <div><Label>Circ. (cm)</Label><Input type="number" step="0.1" value={novoPart.circunferencia_inicial} onChange={e => setNovoPart({ ...novoPart, circunferencia_inicial: e.target.value })} /></div>
-          <Button onClick={addParticipante} className="md:col-span-6 md:w-fit"><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
+          <div><Label>Mês de início</Label><Input type="month" value={novoPart.mes_inicio} onChange={e => setNovoPart({ ...novoPart, mes_inicio: e.target.value })} /></div>
+          <Button onClick={addParticipante} className="md:col-span-7 md:w-fit"><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
         </div>
       </Card>
 
       {/* Tabela editável */}
       <Card className="p-3">
-        <div className="flex items-center justify-between mb-3 px-2">
+        <div className="flex items-center justify-between mb-3 px-2 gap-3 flex-wrap">
           <h2 className="font-semibold">Participantes — dados iniciais</h2>
-          <Button onClick={salvarEdicoes} disabled={!Object.keys(edits).length}>
-            <Save className="h-4 w-4 mr-1" />Salvar alterações ({Object.keys(edits).length})
-          </Button>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs">Filtrar por mês de início:</Label>
+            <Select value={filtroMes} onValueChange={setFiltroMes}>
+              <SelectTrigger className="w-[180px] h-8"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__todos">Todos</SelectItem>
+                <SelectItem value="__sem">Sem definição</SelectItem>
+                {Array.from(new Set(participantes.map(p => p.mes_inicio).filter(Boolean) as string[])).sort().map(m => (
+                  <SelectItem key={m} value={m}>{formatMes(m)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={salvarEdicoes} disabled={!Object.keys(edits).length}>
+              <Save className="h-4 w-4 mr-1" />Salvar ({Object.keys(edits).length})
+            </Button>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
@@ -228,6 +246,7 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
               <tr className="text-left">
                 <th className="px-2 py-2">Nº</th>
                 <th className="px-2 py-2">Nome</th>
+                <th className="px-2 py-2">Mês início</th>
                 <th className="px-2 py-2">Altura (m)</th>
                 <th className="px-2 py-2">Peso inicial</th>
                 <th className="px-2 py-2">IMC inicial</th>
@@ -237,10 +256,16 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
               </tr>
             </thead>
             <tbody>
-              {participantes.map(p => (
+              {participantes
+                .filter(p => filtroMes === "__todos" ? true : filtroMes === "__sem" ? !p.mes_inicio : p.mes_inicio === filtroMes)
+                .map(p => {
+                const miEdit = edits[p.id]?.mes_inicio as string | null | undefined;
+                const miVal = miEdit !== undefined ? (miEdit ?? "") : (p.mes_inicio ?? "");
+                return (
                 <tr key={p.id} className="border-t">
                   <td className="px-2 py-1">{p.numero}</td>
                   <td className="px-2 py-1"><Input className="h-8 w-48" value={getVal(p, "nome")} onChange={e => setVal(p.id, "nome", e.target.value)} /></td>
+                  <td className="px-2 py-1"><Input className="h-8 w-32" type="month" value={typeof miVal === "string" ? miVal.slice(0,7) : ""} onChange={e => setVal(p.id, "mes_inicio", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.01" value={getVal(p, "altura")} onChange={e => setVal(p.id, "altura", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "peso_inicial")} onChange={e => setVal(p.id, "peso_inicial", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20 bg-muted" readOnly value={imcLinha(p)} /></td>
@@ -253,9 +278,10 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
                   </td>
                   <td className="px-2 py-1"><Button variant="ghost" size="sm" onClick={() => removerParticipante(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></td>
                 </tr>
-              ))}
+                );
+              })}
               {!participantes.length && (
-                <tr><td colSpan={8} className="text-center text-sm text-muted-foreground py-6">Nenhum participante cadastrado.</td></tr>
+                <tr><td colSpan={9} className="text-center text-sm text-muted-foreground py-6">Nenhum participante cadastrado.</td></tr>
               )}
             </tbody>
           </table>
@@ -310,7 +336,8 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
       ? new Map(medicoes.filter(m => m.mes_referencia === mesAnterior).map(m => [m.participante_id, m]))
       : new Map<string, Medicao>();
 
-    const rows = participantes.map(p => {
+    const elegiveis = participantes.filter(p => !p.mes_inicio || p.mes_inicio <= iso);
+    const rows = elegiveis.map(p => {
       const ant = medsAnt.get(p.id);
       if (ant) {
         return {
@@ -392,10 +419,17 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
               </tr>
             </thead>
             <tbody>
-              {participantes.map(p => (
+              {participantes
+                .filter(p => !p.mes_inicio || p.mes_inicio <= mesSel)
+                .map(p => {
+                const isInicio = p.mes_inicio === mesSel;
+                return (
                 <tr key={p.id} className="border-t">
                   <td className="px-2 py-1">{p.numero}</td>
-                  <td className="px-2 py-1 font-medium whitespace-nowrap">{p.nome}</td>
+                  <td className="px-2 py-1 font-medium whitespace-nowrap">
+                    {p.nome}
+                    {isInicio && <span className="ml-1 inline-block px-1.5 py-0.5 rounded bg-primary/15 text-primary text-[10px] font-medium">Início</span>}
+                  </td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "peso")} onChange={e => setVal(p.id, "peso", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20 bg-muted/40" type="number" step="0.01" value={getVal(p, "imc")} onChange={e => setVal(p.id, "imc", e.target.value)} title="Recalculado ao alterar peso" /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "circunferencia")} onChange={e => setVal(p.id, "circunferencia", e.target.value)} /></td>
@@ -407,7 +441,8 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
                   <td className="px-2 py-1"><Input className="h-8 w-14" type="number" value={getVal(p, "consultas_edfisica")} onChange={e => setVal(p.id, "consultas_edfisica", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-48" value={getVal(p, "observacao")} onChange={e => setVal(p.id, "observacao", e.target.value)} /></td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </Card>

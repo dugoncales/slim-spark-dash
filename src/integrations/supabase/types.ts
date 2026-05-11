@@ -102,6 +102,7 @@ export type Database = {
           created_at: string
           id: string
           imc_inicial: number
+          mes_inicio: string | null
           nome: string
           numero: number
           peso_inicial: number
@@ -114,6 +115,7 @@ export type Database = {
           created_at?: string
           id?: string
           imc_inicial: number
+          mes_inicio?: string | null
           nome: string
           numero: number
           peso_inicial: number
@@ -126,6 +128,7 @@ export type Database = {
           created_at?: string
           id?: string
           imc_inicial?: number
+          mes_inicio?: string | null
           nome?: string
           numero?: number
           peso_inicial?: number
