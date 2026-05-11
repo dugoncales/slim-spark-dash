@@ -1,35 +1,30 @@
 ## Objetivo
 
-Permitir registrar o **mês de início individual** de cada participante (cada paciente entra em momentos diferentes no programa) e usar essa informação para:
-1. Filtrar a lista do Cadastro inicial por mês de entrada.
-2. **Excluir do cálculo de perda de peso** do Acompanhamento mensal os pacientes que iniciaram exatamente no mês selecionado (ainda não há comparação a fazer).
+No Acompanhamento mensal, quando o mês selecionado é o **mês de início** do participante, exibir automaticamente a **circunferência abdominal inicial** (cadastrada no Cadastro inicial) na coluna `Circ.`, em vez de aparecer em branco.
+
+## Diagnóstico
+
+A lógica de `criarMes` já preenche `circunferencia` a partir de `circunferencia_inicial` quando não há mês anterior. Porém, nos dados atuais (ex.: março/2025), as `medicoes` foram criadas antes dessa regra existir, então o campo está `null` no banco e aparece vazio na grade.
 
 ## Mudanças
 
-### 1. Banco de dados
-- Adicionar coluna `mes_inicio` (`date`, nullable) à tabela `participantes`.
-- Backfill: para participantes existentes sem valor, usar a data da primeira `medicao` daquele participante; se não houver, usar o `mes_inicio` global da tabela `configuracoes`.
+### 1. Backfill de dados existentes (migration SQL)
+Atualizar `medicoes` onde:
+- `mes_referencia = participante.mes_inicio` (linha do mês de entrada)
+- `circunferencia IS NULL`
+- `participante.circunferencia_inicial IS NOT NULL`
 
-### 2. Cadastro inicial (`/gestao` → aba Cadastro inicial)
-- **Adicionar participante**: novo campo `Mês de início` (input `month`), obrigatório. Default = mês atual.
-- **Tabela editável**: nova coluna `Mês início` (input `month`) editável por linha; entra no fluxo de `salvarEdicoes`.
-- **Filtro**: novo seletor "Filtrar por mês de início" (Todos / lista de meses distintos) acima da tabela.
-- O card global "Mês de início do acompanhamento" continua existindo como **default** sugerido para novos cadastros, mas não substitui o valor por participante.
+→ setar `circunferencia = participante.circunferencia_inicial`. Mesma lógica para `peso` e `imc` (caso também estejam nulos no mês de entrada), garantindo consistência da linha base.
 
-### 3. Acompanhamento mensal (`/gestao` → aba Acompanhamento)
-- Ao gerar/abrir um mês, **só pré-preencher linhas** para participantes cujo `mes_inicio <= mes selecionado` (os outros ainda não entraram).
-- Mostrar badge "Início neste mês" na linha quando `mes_inicio == mes selecionado`.
+### 2. Acompanhamento mensal (`src/routes/gestao.tsx`) — fallback de exibição
+Na renderização da grade, para participantes cujo `mes_inicio === mesSel`:
+- Se o valor exibido de `circunferencia` (após edits locais) estiver vazio, usar `participante.circunferencia_inicial` como valor padrão sugerido no input.
+- Idem para `peso` e `imc` por coerência (já é o caso na maioria das linhas, mas garante para novos cadastros futuros).
 
-### 4. Dashboard (`/`)
-- Na construção das `rows` de análise (KPIs de perda, top 3, tabela de peso, gráficos de comparação), **excluir** participantes cujo `mes_inicio == mes selecionado` (linha base = mês atual, sem perda calculável).
-- Estes participantes continuam aparecendo nas abas neutras (Circunferência, Tratamento, Multidisciplinar) marcados como "Mês de entrada" (sem variação).
-- Adicionar nota visual nos KPIs: "X paciente(s) iniciaram neste mês e foram desconsiderados na análise de perda."
-
-### 5. Tipos
-- Atualizar `Participante` em `src/lib/dashboard-data.ts` para incluir `mes_inicio: string | null`.
+Isso protege casos em que o participante for cadastrado depois e a `medicao` daquele mês não passar pelo `criarMes`.
 
 ## Arquivos afetados
-- migration SQL (nova)
-- `src/lib/dashboard-data.ts`
-- `src/routes/gestao.tsx`
-- `src/routes/index.tsx`
+- nova migration SQL (backfill)
+- `src/routes/gestao.tsx` (fallback visual no input)
+
+Sem mudanças no Dashboard (`/`) — ele já lê de `medicoes`, e após o backfill os valores ficam corretos.
