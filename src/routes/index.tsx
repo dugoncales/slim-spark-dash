@@ -64,8 +64,9 @@ function Dashboard() {
   const medicoesDoMes = (data?.medicoes ?? []).filter(m => m.mes_referencia === mesSel);
   const byPart = new Map(medicoesDoMes.map(m => [m.participante_id, m]));
 
+  const iniciaramNoMes = participantes.filter(p => byPart.has(p.id) && p.mes_inicio === mesSel).length;
   const rows = participantes
-    .filter(p => byPart.has(p.id))
+    .filter(p => byPart.has(p.id) && p.mes_inicio !== mesSel)
     .map(p => {
       const m = byPart.get(p.id)!;
       const perdaKg = (m.peso ?? 0) - p.peso_inicial;
