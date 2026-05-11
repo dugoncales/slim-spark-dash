@@ -14,7 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      medicoes: {
+        Row: {
+          circunferencia: number | null
+          consultas_edfisica: number | null
+          consultas_endocrino: number | null
+          consultas_nutri: number | null
+          consultas_psico: number | null
+          created_at: string
+          dose: string | null
+          id: string
+          imc: number | null
+          medicamento: string | null
+          mes_referencia: string
+          observacao: string | null
+          participante_id: string
+          peso: number | null
+          updated_at: string
+        }
+        Insert: {
+          circunferencia?: number | null
+          consultas_edfisica?: number | null
+          consultas_endocrino?: number | null
+          consultas_nutri?: number | null
+          consultas_psico?: number | null
+          created_at?: string
+          dose?: string | null
+          id?: string
+          imc?: number | null
+          medicamento?: string | null
+          mes_referencia: string
+          observacao?: string | null
+          participante_id: string
+          peso?: number | null
+          updated_at?: string
+        }
+        Update: {
+          circunferencia?: number | null
+          consultas_edfisica?: number | null
+          consultas_endocrino?: number | null
+          consultas_nutri?: number | null
+          consultas_psico?: number | null
+          created_at?: string
+          dose?: string | null
+          id?: string
+          imc?: number | null
+          medicamento?: string | null
+          mes_referencia?: string
+          observacao?: string | null
+          participante_id?: string
+          peso?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicoes_participante_id_fkey"
+            columns: ["participante_id"]
+            isOneToOne: false
+            referencedRelation: "participantes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      participantes: {
+        Row: {
+          ativo: boolean
+          circunferencia_inicial: number | null
+          created_at: string
+          id: string
+          imc_inicial: number
+          nome: string
+          numero: number
+          peso_inicial: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          circunferencia_inicial?: number | null
+          created_at?: string
+          id?: string
+          imc_inicial: number
+          nome: string
+          numero: number
+          peso_inicial: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          circunferencia_inicial?: number | null
+          created_at?: string
+          id?: string
+          imc_inicial?: number
+          nome?: string
+          numero?: number
+          peso_inicial?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
