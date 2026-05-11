@@ -172,9 +172,9 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
       for (const [k, v] of Object.entries(fields)) {
         if (v === null || v === undefined || v === "") payload[k] = null;
         else if (numeric.has(k)) payload[k] = Number(v);
+        else if (k === "mes_inicio") payload[k] = String(v).length === 7 ? `${v}-01` : v;
         else payload[k] = v;
       }
-      // Recalcular IMC inicial se peso ou altura mudaram
       const part = participantes.find(p => p.id === pid)!;
       const novoPeso = "peso_inicial" in payload ? (payload.peso_inicial as number | null) : part.peso_inicial;
       const novaAltura = "altura" in payload ? (payload.altura as number | null) : part.altura;
