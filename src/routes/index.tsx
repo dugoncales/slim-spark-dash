@@ -161,6 +161,11 @@ function Dashboard() {
               <KpiCard icon={TrendingUp} label="IMC do Mês Médio" value={fmt(kpis.imcMesMed)} unit="kg/m²" accent="accent" />
               <KpiCard icon={ArrowDownToLine} label="Perda Média de Peso" value={`${fmt(Math.abs(kpis.perdaMedPct), 1)}%`} accent="accent" />
             </div>
+            {iniciaramNoMes > 0 && (
+              <p className="text-xs text-muted-foreground -mt-2">
+                {iniciaramNoMes} paciente(s) iniciaram neste mês e foram desconsiderados na análise de perda de peso.
+              </p>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
               <div className="space-y-6">
