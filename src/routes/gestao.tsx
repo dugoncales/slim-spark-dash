@@ -85,7 +85,10 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
     cfgQ.refetch();
   }
 
-  const [novoPart, setNovoPart] = useState({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "" });
+  const defaultMes = (mesInicio ? mesInicio.slice(0, 7) : new Date().toISOString().slice(0, 7));
+  const [novoPart, setNovoPart] = useState({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: "" });
+  useEffect(() => { if (!novoPart.mes_inicio) setNovoPart(s => ({ ...s, mes_inicio: defaultMes })); }, [defaultMes]);
+  const [filtroMes, setFiltroMes] = useState<string>("__todos");
   const [edits, setEdits] = useState<Record<string, Partial<Participante>>>({});
 
   const imcPreview = (() => {
