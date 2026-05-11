@@ -4,11 +4,17 @@ export type Participante = {
   id: string;
   numero: number;
   nome: string;
+  altura: number | null;
   peso_inicial: number;
   imc_inicial: number;
   circunferencia_inicial: number | null;
   ativo: boolean;
 };
+
+export function calcImc(peso: number | null | undefined, altura: number | null | undefined): number | null {
+  if (!peso || !altura || altura <= 0) return null;
+  return Math.round((peso / (altura * altura)) * 100) / 100;
+}
 
 export type Medicao = {
   id: string;
