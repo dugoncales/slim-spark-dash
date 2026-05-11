@@ -26,6 +26,30 @@ function Gestao() {
 
   const { data, refetch, isLoading } = useQuery({ queryKey: ["gestao"], queryFn: fetchAll, enabled: !!session });
 
+  const cfgQ = useQuery({
+    queryKey: ["configuracoes"],
+    enabled: !!session,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("configuracoes").select("*");
+      if (error) throw error;
+      return Object.fromEntries((data ?? []).map(r => [r.chave, r.valor])) as Record<string, string | null>;
+    },
+  });
+  const mesInicio = cfgQ.data?.mes_inicio ?? null;
+  const [mesInicioEdit, setMesInicioEdit] = useState<string>("");
+  useEffect(() => {
+    if (mesInicio) setMesInicioEdit(mesInicio.slice(0, 7));
+  }, [mesInicio]);
+
+  async function salvarMesInicio() {
+    if (!mesInicioEdit) { toast.error("Informe o mês de início."); return; }
+    const iso = `${mesInicioEdit}-01`;
+    const { error } = await supabase.from("configuracoes").upsert({ chave: "mes_inicio", valor: iso, updated_at: new Date().toISOString() });
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Mês de início definido: ${formatMes(iso)}.`);
+    cfgQ.refetch();
+  }
+
   const meses = useMemo(() => {
     if (!data) return [];
     return Array.from(new Set(data.medicoes.map(m => m.mes_referencia))).sort();
@@ -198,6 +222,20 @@ function Gestao() {
       </header>
 
       <main className="mx-auto max-w-[1400px] px-6 py-6 space-y-6">
+        {/* Mês de início do acompanhamento */}
+        <Card className="p-5 border-primary/30 bg-primary/5">
+          <div className="flex items-end gap-3 flex-wrap">
+            <div>
+              <Label>Mês de início do acompanhamento</Label>
+              <Input type="month" value={mesInicioEdit} onChange={e => setMesInicioEdit(e.target.value)} className="w-[200px]" />
+            </div>
+            <Button onClick={salvarMesInicio}><Save className="h-4 w-4 mr-1" />Salvar início</Button>
+            <p className="text-xs text-muted-foreground basis-full md:basis-auto md:ml-2">
+              {mesInicio ? <>Atual: <strong>{formatMes(mesInicio)}</strong>. Os meses subsequentes são editados individualmente abaixo.</> : "Defina o mês inicial para que o acompanhamento tenha um marco claro."}
+            </p>
+          </div>
+        </Card>
+
         {/* Add participant */}
         <Card className="p-5">
           <h2 className="font-semibold mb-3">Adicionar participante</h2>
