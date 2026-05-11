@@ -117,8 +117,6 @@ function Dashboard() {
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="hidden md:inline">{user?.email}</span>
-            <Link to="/admin"><Button variant="ghost" size="sm"><Settings className="h-4 w-4 mr-1" />Admin</Button></Link>
-            <Button variant="ghost" size="sm" onClick={() => signOut().then(() => navigate({ to: "/login" }))}><LogOut className="h-4 w-4" /></Button>
           </div>
         </div>
       </header>
