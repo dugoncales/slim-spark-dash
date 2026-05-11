@@ -222,6 +222,20 @@ function Gestao() {
       </header>
 
       <main className="mx-auto max-w-[1400px] px-6 py-6 space-y-6">
+        {/* Mês de início do acompanhamento */}
+        <Card className="p-5 border-primary/30 bg-primary/5">
+          <div className="flex items-end gap-3 flex-wrap">
+            <div>
+              <Label>Mês de início do acompanhamento</Label>
+              <Input type="month" value={mesInicioEdit} onChange={e => setMesInicioEdit(e.target.value)} className="w-[200px]" />
+            </div>
+            <Button onClick={salvarMesInicio}><Save className="h-4 w-4 mr-1" />Salvar início</Button>
+            <p className="text-xs text-muted-foreground basis-full md:basis-auto md:ml-2">
+              {mesInicio ? <>Atual: <strong>{formatMes(mesInicio)}</strong>. Os meses subsequentes são editados individualmente abaixo.</> : "Defina o mês inicial para que o acompanhamento tenha um marco claro."}
+            </p>
+          </div>
+        </Card>
+
         {/* Add participant */}
         <Card className="p-5">
           <h2 className="font-semibold mb-3">Adicionar participante</h2>
