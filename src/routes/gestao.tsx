@@ -432,7 +432,7 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
                   </td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "peso")} onChange={e => setVal(p.id, "peso", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20 bg-muted/40" type="number" step="0.01" value={getVal(p, "imc")} onChange={e => setVal(p.id, "imc", e.target.value)} title="Recalculado ao alterar peso" /></td>
-                  <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "circunferencia")} onChange={e => setVal(p.id, "circunferencia", e.target.value)} /></td>
+                  <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "circunferencia") || (isInicio && p.circunferencia_inicial != null ? String(p.circunferencia_inicial) : "")} onChange={e => setVal(p.id, "circunferencia", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-28" value={getVal(p, "medicamento")} onChange={e => setVal(p.id, "medicamento", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" value={getVal(p, "dose")} onChange={e => setVal(p.id, "dose", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-14" type="number" value={getVal(p, "consultas_endocrino")} onChange={e => setVal(p.id, "consultas_endocrino", e.target.value)} /></td>
