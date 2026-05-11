@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
+import { useRoles } from "@/hooks/use-roles";
 import { fetchAll, formatMes, calcImc, type Medicao, type Participante } from "@/lib/dashboard-data";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -18,8 +19,10 @@ export const Route = createFileRoute("/gestao")({
 
 function Gestao() {
   const { session, loading } = useAuth();
+  const { isGestorSaude, loading: rolesLoading } = useRoles();
   const navigate = useNavigate();
   useEffect(() => { if (!loading && !session) navigate({ to: "/login" }); }, [loading, session, navigate]);
+  useEffect(() => { if (!rolesLoading && session && !isGestorSaude) navigate({ to: "/" }); }, [rolesLoading, isGestorSaude, session, navigate]);
 
   const { data, refetch, isLoading } = useQuery({ queryKey: ["gestao"], queryFn: fetchAll, enabled: !!session });
 
