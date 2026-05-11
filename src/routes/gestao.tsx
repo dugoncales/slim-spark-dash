@@ -176,7 +176,8 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
       const novaAltura = "altura" in payload ? (payload.altura as number | null) : part.altura;
       const imc = calcImc(novoPeso ?? null, novaAltura ?? null);
       if (imc != null) payload.imc_inicial = imc;
-      const { error } = await supabase.from("participantes").update(payload).eq("id", pid);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await supabase.from("participantes").update(payload as any).eq("id", pid);
       if (error) { toast.error(error.message); return; }
     }
     toast.success("Cadastro inicial salvo.");
