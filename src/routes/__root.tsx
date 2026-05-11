@@ -57,9 +57,27 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Outlet />
+        <Shell />
         <Toaster richColors position="top-right" />
       </AuthProvider>
     </QueryClientProvider>
+  );
+}
+
+function Shell() {
+  const path = useRouterState({ select: (r) => r.location.pathname });
+  if (path === "/login") return <Outlet />;
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col min-w-0">
+          <div className="md:hidden h-10 flex items-center border-b px-2">
+            <SidebarTrigger />
+          </div>
+          <Outlet />
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }
