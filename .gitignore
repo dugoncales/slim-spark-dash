@@ -16,9 +16,11 @@ dist-ssr
 .nitro
 *.local
 
-# Wrangler / Cloudflare
-.wrangler/
-.dev.vars
+# Vercel
+.vercel/
+
+# Claude Code local
+.claude/
 
 # Editor directories and files
 .vscode/*
