@@ -67,8 +67,12 @@ function Dashboard() {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
   }
 
-  const participantes = data?.participantes ?? [];
-  const medicoesDoMes = (data?.medicoes ?? []).filter(m => m.mes_referencia === mesSel);
+  const allParticipantes = data?.participantes ?? [];
+  const allMedicoes = data?.medicoes ?? [];
+  const coorteAtiva = coorte !== "__all__" ? coorte : null;
+  const coortesDisponiveis = mesesDistintosInicio(allParticipantes);
+  const participantes = coorteAtiva ? allParticipantes.filter(p => p.mes_inicio === coorteAtiva) : allParticipantes;
+  const medicoesDoMes = allMedicoes.filter(m => m.mes_referencia === mesSel);
   const byPart = new Map(medicoesDoMes.map(m => [m.participante_id, m]));
 
   const iniciaramNoMes = participantes.filter(p => byPart.has(p.id) && p.mes_inicio === mesSel).length;
