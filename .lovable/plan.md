@@ -1,36 +1,59 @@
-# Melhorias do Dashboard
+## Migração para Supabase externo
 
-Três melhorias no dashboard principal (`/`), todas em frontend — sem mudanças no banco.
+Vamos migrar este projeto do Lovable Cloud para uma conta Supabase própria sua. O processo tem partes que **só você pode fazer** (criar projeto, conectar) e partes que **eu preparo** (arquivos SQL prontos).
 
-## 1. Filtro por coorte (mês de início)
+### O que existe hoje para migrar
+- 11 participantes, 33 medições, 1 configuração, 2 atribuições de papel (`user_roles`)
+- Usuários do `auth.users` (sua conta de login) — esses **não migram automaticamente**, será preciso recriar o login no novo Supabase
+- Estrutura: enum `app_role`; tabelas `participantes`, `medicoes`, `configuracoes`, `user_roles`, `role_audit_log`; funções `has_role`, `set_updated_at`, `list_users_with_roles`, `handle_new_user_role`; políticas RLS
 
-Novo seletor "Coorte de início" no topo do dashboard, ao lado do seletor de mês:
-- Opções: "Todas as coortes" (padrão) + uma opção por `mes_inicio` distinto encontrado nos participantes (ex: "Iniciaram em Março/2025").
-- Quando uma coorte é selecionada, **todos** os blocos passam a considerar apenas pacientes daquela coorte: KPIs, tabela, gráficos comparativos, insights, top 3, resumo, abas (circunferência, tratamento, consultas) e o novo gráfico de evolução temporal.
-- Persiste em `localStorage` igual ao toggle "Mostrar nomes".
+---
 
-## 2. Evolução temporal do grupo (gráfico de linha)
+### Etapa 1 — Eu gero os arquivos de migração
 
-Novo card "Evolução do grupo ao longo dos meses" abaixo dos dois gráficos comparativos existentes.
-- Eixo X: todos os meses disponíveis (`meses`).
-- Três linhas: **Peso médio (kg)**, **IMC médio (kg/m²)** e **Circunferência média (cm)** — usando eixos Y duplos (peso/circ à esquerda, IMC à direita) para escalas coexistirem.
-- Para cada mês, calcula a média **apenas dos pacientes que já tinham iniciado** (i.e. `mes_inicio <= mes_referencia`) e, se filtro de coorte ativo, restringe a essa coorte.
-- Tooltip mostra n (quantos pacientes contribuíram para a média naquele mês).
-- Usa `recharts` (já instalado via `@/components/ui/chart`).
+Vou criar dois arquivos em `/mnt/documents/` (você baixa):
 
-## 3. Marcos clínicos 5% e 10% de perda
+1. **`schema.sql`** — recria toda a estrutura no Supabase novo:
+   - enum `app_role`
+   - tabelas com colunas, defaults e constraints
+   - funções (`has_role`, `set_updated_at`, `list_users_with_roles`, `handle_new_user_role`)
+   - políticas RLS idênticas às atuais
+   - trigger no `auth.users` para atribuir papel `gestor` automaticamente em novos signups
 
-Nova faixa de KPIs entre o grid atual e a tabela, com 3 cards destacados:
-- **Atingiram ≥ 5% de perda**: contagem + % do total da coorte/grupo (5% é marco clínico de eficácia em obesidade).
-- **Atingiram ≥ 10% de perda**: contagem + % (marco de impacto metabólico significativo).
-- **Perda média acumulada do grupo**: % médio desde o `peso_inicial` de cada paciente até a medição mais recente disponível (não só do mês selecionado) — dá a visão de longo prazo que falta hoje.
+2. **`data.sql`** — `INSERT`s com os dados atuais de `participantes`, `medicoes` e `configuracoes` (preservando IDs/UUIDs).
+   - **`user_roles` NÃO entra aqui** porque depende dos UUIDs de usuários, que serão diferentes no novo Supabase. Você cria seu novo usuário e atribui o papel `admin` manualmente após o primeiro login.
 
-Cada card terá ícone (Trophy/Target/TrendingDown) e cor de destaque (success quando metas batidas).
+### Etapa 2 — Você (no supabase.com)
+1. Criar projeto novo
+2. Em SQL Editor: rodar `schema.sql`, depois `data.sql`
+3. Em Authentication → Providers: ativar Email/Password (e Google, opcional)
+4. Em Authentication → URL Configuration: adicionar a URL do app Lovable como Site URL e Redirect URL
 
-## Detalhes técnicos
+### Etapa 3 — Você (no Lovable)
+1. Sidebar → **Connectors** → **Supabase** → Connect
+2. Selecionar seu projeto novo
+3. O Lovable atualiza automaticamente `client.ts`, `types.ts` e `.env`
 
-- Arquivos: `src/routes/index.tsx` (filtro, KPIs novos, novo gráfico), novo componente `src/components/dashboard/EvolucaoChart.tsx`.
-- Novo helper em `src/lib/dashboard-data.ts`: `mesesDistintosInicio(participantes)` e `calcEvolucaoGrupo(participantes, medicoes, coorte?)` que retorna `{ mes, pesoMedio, imcMedio, circMedia, n }[]`.
-- Para "perda acumulada": pega a última medição (maior `mes_referencia`) de cada paciente e compara com `peso_inicial`. Pacientes sem medição posterior ao início são desconsiderados.
-- Marcos 5%/10% usam essa mesma lógica acumulada (não só do mês selecionado) — mais relevante clinicamente.
-- Sem migrations, sem novas dependências.
+### Etapa 4 — Eu valido o código
+- Confirmo que `src/integrations/supabase/client.ts`, `types.ts`, `auth-middleware.ts` e `client.server.ts` continuam funcionando com a nova conexão
+- Reinicio o dev server se necessário
+- Teste rápido: login + leitura do dashboard
+
+### Etapa 5 — Você (primeiro acesso)
+1. Acessar `/login` e criar sua conta no novo Supabase
+2. No SQL Editor do Supabase, rodar:
+   ```sql
+   INSERT INTO public.user_roles (user_id, role)
+   VALUES ('<seu-novo-user-id>', 'admin');
+   ```
+   (você pega o user_id em Authentication → Users)
+
+---
+
+### Pontos de atenção
+- **Lovable Cloud não desliga** — ele continua existindo no projeto, mas o app passa a usar o seu Supabase a partir do momento da conexão. Os dados antigos no Lovable Cloud ficam parados como backup.
+- **Logins atuais não funcionam mais** — qualquer pessoa que usava o sistema precisará criar conta novamente.
+- **Edge functions / secrets**: este projeto não usa edge functions, então não há nada para portar nesse aspecto.
+
+### Entregáveis desta plano (quando aprovar)
+Eu produzo `schema.sql` e `data.sql` em `/mnt/documents/` e te entrego os links para download. A partir daí, você executa as etapas 2 e 3, e eu retomo na etapa 4.
