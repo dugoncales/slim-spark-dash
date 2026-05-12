@@ -260,6 +260,8 @@ function Dashboard() {
                   <ComparisonChart title="Peso Inicial vs Mês (kg)" data={chartData} keyA="pesoIni" keyB="pesoMes" labelA="Peso Inicial (kg)" labelB="Peso Mês (kg)" unit="Peso (kg)" />
                   <ComparisonChart title="IMC Inicial vs Mês (kg/m²)" data={chartData} keyA="imcIni" keyB="imcMes" labelA="IMC Inicial" labelB="IMC Mês" unit="IMC (kg/m²)" />
                 </div>
+
+                {evolucao.length > 1 && <EvolucaoChart data={evolucao} />}
               </div>
 
               {/* Sidebar */}
