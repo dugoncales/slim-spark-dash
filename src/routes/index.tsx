@@ -192,6 +192,36 @@ function Dashboard() {
               </p>
             )}
 
+            {/* Marcos clínicos */}
+            {marcos.total > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Card className="p-4 flex items-center gap-4 shadow-sm">
+                  <div className="h-14 w-14 rounded-lg bg-success/15 text-success flex items-center justify-center"><Target className="h-7 w-7" /></div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">Atingiram ≥ 5% de perda</p>
+                    <p className="text-2xl font-bold text-foreground leading-tight">{marcos.atingiram5}<span className="text-sm font-semibold text-muted-foreground ml-1">/ {marcos.total}</span></p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{fmt(pct5, 0)}% do grupo · marco clínico de eficácia</p>
+                  </div>
+                </Card>
+                <Card className="p-4 flex items-center gap-4 shadow-sm">
+                  <div className="h-14 w-14 rounded-lg bg-success/15 text-success flex items-center justify-center"><Trophy className="h-7 w-7" /></div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">Atingiram ≥ 10% de perda</p>
+                    <p className="text-2xl font-bold text-foreground leading-tight">{marcos.atingiram10}<span className="text-sm font-semibold text-muted-foreground ml-1">/ {marcos.total}</span></p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{fmt(pct10, 0)}% do grupo · impacto metabólico</p>
+                  </div>
+                </Card>
+                <Card className="p-4 flex items-center gap-4 shadow-sm">
+                  <div className="h-14 w-14 rounded-lg bg-primary/15 text-primary flex items-center justify-center"><TrendingDown className="h-7 w-7" /></div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">Perda média acumulada</p>
+                    <p className="text-2xl font-bold text-foreground leading-tight">{fmt(Math.abs(marcos.perdaMediaAcumPct), 1)}<span className="text-sm font-semibold text-muted-foreground ml-1">%</span></p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">desde o início de cada paciente</p>
+                  </div>
+                </Card>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
               <div className="space-y-6">
                 {/* Table */}
