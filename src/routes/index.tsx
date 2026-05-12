@@ -113,6 +113,11 @@ function Dashboard() {
     circMes: r.m.circunferencia ?? 0,
   }));
 
+  const evolucao = calcEvolucaoGrupo(allParticipantes, allMedicoes, coorteAtiva);
+  const marcos = calcMarcos(allParticipantes, allMedicoes, coorteAtiva);
+  const pct5 = marcos.total ? (marcos.atingiram5 / marcos.total) * 100 : 0;
+  const pct10 = marcos.total ? (marcos.atingiram10 / marcos.total) * 100 : 0;
+
   return (
     <div className="min-h-screen bg-background">
       <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} onSuccess={refetch} />
