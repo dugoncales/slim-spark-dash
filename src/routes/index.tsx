@@ -157,6 +157,15 @@ function Dashboard() {
                 {meses.map(m => <SelectItem key={m} value={m}>{formatMes(m)}</SelectItem>)}
               </SelectContent>
             </Select>
+            {coortesDisponiveis.length > 1 && (
+              <Select value={coorte} onValueChange={setCoorte}>
+                <SelectTrigger className="w-[210px]"><SelectValue placeholder="Coorte de início" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todas as coortes</SelectItem>
+                  {coortesDisponiveis.map(m => <SelectItem key={m} value={m}>Iniciaram em {formatMes(m)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
             <Button onClick={() => setUploadOpen(true)} className="gap-2"><UploadCloud className="h-4 w-4" />Importar planilha</Button>
           </div>
         </div>
