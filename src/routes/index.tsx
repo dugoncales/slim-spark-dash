@@ -1,17 +1,18 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Scale, TrendingUp, ArrowDownToLine, Lightbulb, Trophy, Users, UploadCloud, Eye, EyeOff } from "lucide-react";
+import { Scale, TrendingUp, ArrowDownToLine, Lightbulb, Trophy, Users, UploadCloud, Eye, EyeOff, Target, TrendingDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
-import { fetchAll, formatMes, nomeOuNumero, type Participante, type Medicao } from "@/lib/dashboard-data";
+import { fetchAll, formatMes, nomeOuNumero, mesesDistintosInicio, calcEvolucaoGrupo, calcMarcos, type Participante, type Medicao } from "@/lib/dashboard-data";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { ComparisonChart } from "@/components/dashboard/ComparisonChart";
 import { UploadDialog } from "@/components/dashboard/UploadDialog";
+import { EvolucaoChart } from "@/components/dashboard/EvolucaoChart";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
