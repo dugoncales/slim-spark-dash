@@ -32,14 +32,20 @@ function Dashboard() {
 
   const [mostrarNomes, setMostrarNomes] = useState(false);
   const [mesSel, setMesSel] = useState<string | null>(null);
+  const [coorte, setCoorte] = useState<string>("__all__");
   const [uploadOpen, setUploadOpen] = useState(false);
 
   useEffect(() => {
     setMostrarNomes(localStorage.getItem("mostrarNomes") === "1");
+    const c = localStorage.getItem("coorte");
+    if (c) setCoorte(c);
   }, []);
   useEffect(() => {
     localStorage.setItem("mostrarNomes", mostrarNomes ? "1" : "0");
   }, [mostrarNomes]);
+  useEffect(() => {
+    localStorage.setItem("coorte", coorte);
+  }, [coorte]);
 
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["dashboard"],
