@@ -1,17 +1,18 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Scale, TrendingUp, ArrowDownToLine, Lightbulb, Trophy, Users, UploadCloud, Eye, EyeOff } from "lucide-react";
+import { Scale, TrendingUp, ArrowDownToLine, Lightbulb, Trophy, Users, UploadCloud, Eye, EyeOff, Target, TrendingDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
-import { fetchAll, formatMes, nomeOuNumero, type Participante, type Medicao } from "@/lib/dashboard-data";
+import { fetchAll, formatMes, nomeOuNumero, mesesDistintosInicio, calcEvolucaoGrupo, calcMarcos, type Participante, type Medicao } from "@/lib/dashboard-data";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { ComparisonChart } from "@/components/dashboard/ComparisonChart";
 import { UploadDialog } from "@/components/dashboard/UploadDialog";
+import { EvolucaoChart } from "@/components/dashboard/EvolucaoChart";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -31,14 +32,20 @@ function Dashboard() {
 
   const [mostrarNomes, setMostrarNomes] = useState(false);
   const [mesSel, setMesSel] = useState<string | null>(null);
+  const [coorte, setCoorte] = useState<string>("__all__");
   const [uploadOpen, setUploadOpen] = useState(false);
 
   useEffect(() => {
     setMostrarNomes(localStorage.getItem("mostrarNomes") === "1");
+    const c = localStorage.getItem("coorte");
+    if (c) setCoorte(c);
   }, []);
   useEffect(() => {
     localStorage.setItem("mostrarNomes", mostrarNomes ? "1" : "0");
   }, [mostrarNomes]);
+  useEffect(() => {
+    localStorage.setItem("coorte", coorte);
+  }, [coorte]);
 
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["dashboard"],
@@ -60,8 +67,12 @@ function Dashboard() {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
   }
 
-  const participantes = data?.participantes ?? [];
-  const medicoesDoMes = (data?.medicoes ?? []).filter(m => m.mes_referencia === mesSel);
+  const allParticipantes = data?.participantes ?? [];
+  const allMedicoes = data?.medicoes ?? [];
+  const coorteAtiva = coorte !== "__all__" ? coorte : null;
+  const coortesDisponiveis = mesesDistintosInicio(allParticipantes);
+  const participantes = coorteAtiva ? allParticipantes.filter(p => p.mes_inicio === coorteAtiva) : allParticipantes;
+  const medicoesDoMes = allMedicoes.filter(m => m.mes_referencia === mesSel);
   const byPart = new Map(medicoesDoMes.map(m => [m.participante_id, m]));
 
   const iniciaramNoMes = participantes.filter(p => byPart.has(p.id) && p.mes_inicio === mesSel).length;
@@ -102,6 +113,11 @@ function Dashboard() {
     circMes: r.m.circunferencia ?? 0,
   }));
 
+  const evolucao = calcEvolucaoGrupo(allParticipantes, allMedicoes, coorteAtiva);
+  const marcos = calcMarcos(allParticipantes, allMedicoes, coorteAtiva);
+  const pct5 = marcos.total ? (marcos.atingiram5 / marcos.total) * 100 : 0;
+  const pct10 = marcos.total ? (marcos.atingiram10 / marcos.total) * 100 : 0;
+
   return (
     <div className="min-h-screen bg-background">
       <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} onSuccess={refetch} />
@@ -141,6 +157,15 @@ function Dashboard() {
                 {meses.map(m => <SelectItem key={m} value={m}>{formatMes(m)}</SelectItem>)}
               </SelectContent>
             </Select>
+            {coortesDisponiveis.length > 1 && (
+              <Select value={coorte} onValueChange={setCoorte}>
+                <SelectTrigger className="w-[210px]"><SelectValue placeholder="Coorte de início" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todas as coortes</SelectItem>
+                  {coortesDisponiveis.map(m => <SelectItem key={m} value={m}>Iniciaram em {formatMes(m)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
             <Button onClick={() => setUploadOpen(true)} className="gap-2"><UploadCloud className="h-4 w-4" />Importar planilha</Button>
           </div>
         </div>
@@ -165,6 +190,36 @@ function Dashboard() {
               <p className="text-xs text-muted-foreground -mt-2">
                 {iniciaramNoMes} paciente(s) iniciaram neste mês e foram desconsiderados na análise de perda de peso.
               </p>
+            )}
+
+            {/* Marcos clínicos */}
+            {marcos.total > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Card className="p-4 flex items-center gap-4 shadow-sm">
+                  <div className="h-14 w-14 rounded-lg bg-success/15 text-success flex items-center justify-center"><Target className="h-7 w-7" /></div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">Atingiram ≥ 5% de perda</p>
+                    <p className="text-2xl font-bold text-foreground leading-tight">{marcos.atingiram5}<span className="text-sm font-semibold text-muted-foreground ml-1">/ {marcos.total}</span></p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{fmt(pct5, 0)}% do grupo · marco clínico de eficácia</p>
+                  </div>
+                </Card>
+                <Card className="p-4 flex items-center gap-4 shadow-sm">
+                  <div className="h-14 w-14 rounded-lg bg-success/15 text-success flex items-center justify-center"><Trophy className="h-7 w-7" /></div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">Atingiram ≥ 10% de perda</p>
+                    <p className="text-2xl font-bold text-foreground leading-tight">{marcos.atingiram10}<span className="text-sm font-semibold text-muted-foreground ml-1">/ {marcos.total}</span></p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{fmt(pct10, 0)}% do grupo · impacto metabólico</p>
+                  </div>
+                </Card>
+                <Card className="p-4 flex items-center gap-4 shadow-sm">
+                  <div className="h-14 w-14 rounded-lg bg-primary/15 text-primary flex items-center justify-center"><TrendingDown className="h-7 w-7" /></div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">Perda média acumulada</p>
+                    <p className="text-2xl font-bold text-foreground leading-tight">{fmt(Math.abs(marcos.perdaMediaAcumPct), 1)}<span className="text-sm font-semibold text-muted-foreground ml-1">%</span></p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">desde o início de cada paciente</p>
+                  </div>
+                </Card>
+              </div>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
@@ -205,6 +260,8 @@ function Dashboard() {
                   <ComparisonChart title="Peso Inicial vs Mês (kg)" data={chartData} keyA="pesoIni" keyB="pesoMes" labelA="Peso Inicial (kg)" labelB="Peso Mês (kg)" unit="Peso (kg)" />
                   <ComparisonChart title="IMC Inicial vs Mês (kg/m²)" data={chartData} keyA="imcIni" keyB="imcMes" labelA="IMC Inicial" labelB="IMC Mês" unit="IMC (kg/m²)" />
                 </div>
+
+                {evolucao.length > 1 && <EvolucaoChart data={evolucao} />}
               </div>
 
               {/* Sidebar */}

@@ -1,30 +1,36 @@
-## Objetivo
+# Melhorias do Dashboard
 
-No Acompanhamento mensal, quando o mês selecionado é o **mês de início** do participante, exibir automaticamente a **circunferência abdominal inicial** (cadastrada no Cadastro inicial) na coluna `Circ.`, em vez de aparecer em branco.
+Três melhorias no dashboard principal (`/`), todas em frontend — sem mudanças no banco.
 
-## Diagnóstico
+## 1. Filtro por coorte (mês de início)
 
-A lógica de `criarMes` já preenche `circunferencia` a partir de `circunferencia_inicial` quando não há mês anterior. Porém, nos dados atuais (ex.: março/2025), as `medicoes` foram criadas antes dessa regra existir, então o campo está `null` no banco e aparece vazio na grade.
+Novo seletor "Coorte de início" no topo do dashboard, ao lado do seletor de mês:
+- Opções: "Todas as coortes" (padrão) + uma opção por `mes_inicio` distinto encontrado nos participantes (ex: "Iniciaram em Março/2025").
+- Quando uma coorte é selecionada, **todos** os blocos passam a considerar apenas pacientes daquela coorte: KPIs, tabela, gráficos comparativos, insights, top 3, resumo, abas (circunferência, tratamento, consultas) e o novo gráfico de evolução temporal.
+- Persiste em `localStorage` igual ao toggle "Mostrar nomes".
 
-## Mudanças
+## 2. Evolução temporal do grupo (gráfico de linha)
 
-### 1. Backfill de dados existentes (migration SQL)
-Atualizar `medicoes` onde:
-- `mes_referencia = participante.mes_inicio` (linha do mês de entrada)
-- `circunferencia IS NULL`
-- `participante.circunferencia_inicial IS NOT NULL`
+Novo card "Evolução do grupo ao longo dos meses" abaixo dos dois gráficos comparativos existentes.
+- Eixo X: todos os meses disponíveis (`meses`).
+- Três linhas: **Peso médio (kg)**, **IMC médio (kg/m²)** e **Circunferência média (cm)** — usando eixos Y duplos (peso/circ à esquerda, IMC à direita) para escalas coexistirem.
+- Para cada mês, calcula a média **apenas dos pacientes que já tinham iniciado** (i.e. `mes_inicio <= mes_referencia`) e, se filtro de coorte ativo, restringe a essa coorte.
+- Tooltip mostra n (quantos pacientes contribuíram para a média naquele mês).
+- Usa `recharts` (já instalado via `@/components/ui/chart`).
 
-→ setar `circunferencia = participante.circunferencia_inicial`. Mesma lógica para `peso` e `imc` (caso também estejam nulos no mês de entrada), garantindo consistência da linha base.
+## 3. Marcos clínicos 5% e 10% de perda
 
-### 2. Acompanhamento mensal (`src/routes/gestao.tsx`) — fallback de exibição
-Na renderização da grade, para participantes cujo `mes_inicio === mesSel`:
-- Se o valor exibido de `circunferencia` (após edits locais) estiver vazio, usar `participante.circunferencia_inicial` como valor padrão sugerido no input.
-- Idem para `peso` e `imc` por coerência (já é o caso na maioria das linhas, mas garante para novos cadastros futuros).
+Nova faixa de KPIs entre o grid atual e a tabela, com 3 cards destacados:
+- **Atingiram ≥ 5% de perda**: contagem + % do total da coorte/grupo (5% é marco clínico de eficácia em obesidade).
+- **Atingiram ≥ 10% de perda**: contagem + % (marco de impacto metabólico significativo).
+- **Perda média acumulada do grupo**: % médio desde o `peso_inicial` de cada paciente até a medição mais recente disponível (não só do mês selecionado) — dá a visão de longo prazo que falta hoje.
 
-Isso protege casos em que o participante for cadastrado depois e a `medicao` daquele mês não passar pelo `criarMes`.
+Cada card terá ícone (Trophy/Target/TrendingDown) e cor de destaque (success quando metas batidas).
 
-## Arquivos afetados
-- nova migration SQL (backfill)
-- `src/routes/gestao.tsx` (fallback visual no input)
+## Detalhes técnicos
 
-Sem mudanças no Dashboard (`/`) — ele já lê de `medicoes`, e após o backfill os valores ficam corretos.
+- Arquivos: `src/routes/index.tsx` (filtro, KPIs novos, novo gráfico), novo componente `src/components/dashboard/EvolucaoChart.tsx`.
+- Novo helper em `src/lib/dashboard-data.ts`: `mesesDistintosInicio(participantes)` e `calcEvolucaoGrupo(participantes, medicoes, coorte?)` que retorna `{ mes, pesoMedio, imcMedio, circMedia, n }[]`.
+- Para "perda acumulada": pega a última medição (maior `mes_referencia`) de cada paciente e compara com `peso_inicial`. Pacientes sem medição posterior ao início são desconsiderados.
+- Marcos 5%/10% usam essa mesma lógica acumulada (não só do mês selecionado) — mais relevante clinicamente.
+- Sem migrations, sem novas dependências.
