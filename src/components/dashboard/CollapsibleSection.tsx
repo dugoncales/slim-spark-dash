@@ -18,7 +18,7 @@ export function CollapsibleSection({
 }: {
   id: string;
   title: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   icon?: LucideIcon;
   defaultOpen?: boolean;
   actions?: React.ReactNode;

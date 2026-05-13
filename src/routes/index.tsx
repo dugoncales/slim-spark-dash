@@ -18,7 +18,10 @@ import {
   Table as TableIcon,
   Activity,
   Layers,
+  ChevronRight,
+  MousePointer2,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -135,6 +138,21 @@ function Dashboard() {
   useEffect(() => {
     if (meses.length && !mesSel) setMesSel(meses[meses.length - 1]);
   }, [meses, mesSel]);
+
+  // Primeira visita ao dashboard: pulsa a primeira linha da tabela por 2s
+  // para sinalizar que linhas são clicáveis. Persiste no localStorage.
+  const [showRowHint, setShowRowHint] = useState(false);
+  useEffect(() => {
+    if (isLoading || !data) return;
+    if (typeof window === "undefined") return;
+    if (window.localStorage.getItem("dashboard:hint-shown")) return;
+    setShowRowHint(true);
+    const t = setTimeout(() => {
+      setShowRowHint(false);
+      window.localStorage.setItem("dashboard:hint-shown", "1");
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [isLoading, data]);
 
   // Run the actual snapshot when activeExport is set. We wait long enough for
   // newly-mounted Recharts components (sections that were collapsed prior to
@@ -436,59 +454,105 @@ function Dashboard() {
       </CollapsibleSection>
     ) : null;
 
+  const tabelaSubtitle = (
+    <span className="flex items-center gap-2 truncate">
+      <span>{rows.length} pessoa(s)</span>
+      {!exportMode && (
+        <span className="flex items-center gap-1 text-muted-foreground/80">
+          <span aria-hidden="true">·</span>
+          <MousePointer2 className="h-3 w-3" />
+          <span className="truncate">Clique em um participante para ver o perfil completo</span>
+        </span>
+      )}
+    </span>
+  );
+
   const tabelaSection = (
     <CollapsibleSection
       id="tabela"
       title="Tabela de participantes"
-      subtitle={`${rows.length} pessoa(s)`}
+      subtitle={tabelaSubtitle}
       icon={TableIcon}
       contentClassName="p-0"
       {...sectionExportProps}
     >
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-muted-foreground">
-            <tr className="text-left">
-              <th className="px-4 py-3 font-medium">Pessoa</th>
-              <th className="px-4 py-3 font-medium">IMC Inicial</th>
-              <th className="px-4 py-3 font-medium">Peso Inicial (kg)</th>
-              <th className="px-4 py-3 font-medium">Peso Mês (kg)</th>
-              <th className="px-4 py-3 font-medium">IMC Mês</th>
-              <th className="px-4 py-3 font-medium">Perda (kg)</th>
-              <th className="px-4 py-3 font-medium">Perda (%)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={r.p.id} className="border-t hover:bg-muted/30">
-                <td className="px-4 py-2.5 font-medium">
-                  <Link
-                    to="/paciente/$id"
-                    params={{ id: r.p.id }}
-                    className="text-primary hover:underline"
-                  >
-                    {displayName(r.p, i)}
-                  </Link>
-                </td>
-                <td className="px-4 py-2.5">{fmt(r.p.imc_inicial)}</td>
-                <td className="px-4 py-2.5">{fmt(r.p.peso_inicial)}</td>
-                <td className="px-4 py-2.5">{fmt(r.m.peso ?? 0)}</td>
-                <td className="px-4 py-2.5">{fmt(r.m.imc ?? 0, 2)}</td>
-                <td
-                  className={`px-4 py-2.5 font-semibold ${r.perdaKg < 0 ? "text-success" : "text-destructive"}`}
-                >
-                  {fmt(r.perdaKg, 1)}
-                </td>
-                <td
-                  className={`px-4 py-2.5 font-semibold ${r.perdaPct < 0 ? "text-success" : "text-destructive"}`}
-                >
-                  {fmt(r.perdaPct, 2)}%
-                </td>
+      <TooltipProvider delayDuration={300}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-muted-foreground">
+              <tr className="text-left">
+                <th className="px-4 py-3 font-medium">Pessoa</th>
+                <th className="px-4 py-3 font-medium">IMC Inicial</th>
+                <th className="px-4 py-3 font-medium">Peso Inicial (kg)</th>
+                <th className="px-4 py-3 font-medium">Peso Mês (kg)</th>
+                <th className="px-4 py-3 font-medium">IMC Mês</th>
+                <th className="px-4 py-3 font-medium">Perda (kg)</th>
+                <th className="px-4 py-3 font-medium">Perda (%)</th>
+                <th className="px-2 py-3 w-8" aria-label="Abrir perfil" />
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => {
+                const pulse = !exportMode && showRowHint && i === 0;
+                return (
+                  <tr
+                    key={r.p.id}
+                    className={`group border-t transition-colors cursor-pointer hover:bg-muted/50 ${
+                      pulse ? "bg-primary/10 animate-pulse" : ""
+                    }`}
+                    onClick={() => navigate({ to: "/paciente/$id", params: { id: r.p.id } })}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        navigate({ to: "/paciente/$id", params: { id: r.p.id } });
+                      }
+                    }}
+                    tabIndex={0}
+                    role="link"
+                    aria-label={`Abrir perfil de ${displayName(r.p, i)}`}
+                  >
+                    <td className="px-4 py-2.5 font-medium">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link
+                            to="/paciente/$id"
+                            params={{ id: r.p.id }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-primary hover:underline decoration-dotted underline-offset-2"
+                          >
+                            {displayName(r.p, i)}
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">Ver perfil completo →</TooltipContent>
+                      </Tooltip>
+                    </td>
+                    <td className="px-4 py-2.5">{fmt(r.p.imc_inicial)}</td>
+                    <td className="px-4 py-2.5">{fmt(r.p.peso_inicial)}</td>
+                    <td className="px-4 py-2.5">{fmt(r.m.peso ?? 0)}</td>
+                    <td className="px-4 py-2.5">{fmt(r.m.imc ?? 0, 2)}</td>
+                    <td
+                      className={`px-4 py-2.5 font-semibold ${r.perdaKg < 0 ? "text-success" : "text-destructive"}`}
+                    >
+                      {fmt(r.perdaKg, 1)}
+                    </td>
+                    <td
+                      className={`px-4 py-2.5 font-semibold ${r.perdaPct < 0 ? "text-success" : "text-destructive"}`}
+                    >
+                      {fmt(r.perdaPct, 2)}%
+                    </td>
+                    <td className="px-2 py-2.5 text-right">
+                      <ChevronRight
+                        className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity inline-block"
+                        aria-hidden="true"
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </TooltipProvider>
     </CollapsibleSection>
   );
 
