@@ -35,7 +35,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
-import { useRoles } from "@/hooks/use-roles";
+import { useMostrarNomes } from "@/hooks/use-mostrar-nomes";
 import {
   fetchAll,
   formatMes,
@@ -70,18 +70,13 @@ type ExportFormat = "pdf" | "png";
 
 function Dashboard() {
   const { session, loading, user } = useAuth();
-  const { isAdmin, isGestorSaude, loading: rolesLoading } = useRoles();
+  const { mostrarNomes, setMostrarNomes, canToggle: canToggleNames } = useMostrarNomes();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading && !session) navigate({ to: "/login" });
   }, [loading, session, navigate]);
 
-  // Privacy: gestor (not gestor_saude, not admin) sees no toggle, always anonymous.
-  // gestor_saude default off. admin default on.
-  const canToggleNames = isAdmin || isGestorSaude;
-  const [mostrarNomes, setMostrarNomes] = useState(false);
-  const [namesHydrated, setNamesHydrated] = useState(false);
   const [mesSel, setMesSel] = useState<string | null>(null);
   const [coorte, setCoorte] = useState<string>("__all__");
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -95,25 +90,6 @@ function Dashboard() {
     format: ExportFormat;
     selected: Set<string>;
   } | null>(null);
-
-  useEffect(() => {
-    if (rolesLoading) return;
-    if (!canToggleNames) {
-      setMostrarNomes(false);
-      setNamesHydrated(true);
-      return;
-    }
-    const stored = window.localStorage.getItem("mostrarNomes");
-    if (stored !== null) setMostrarNomes(stored === "1");
-    else setMostrarNomes(isAdmin);
-    setNamesHydrated(true);
-  }, [rolesLoading, canToggleNames, isAdmin]);
-
-  useEffect(() => {
-    if (namesHydrated && canToggleNames) {
-      window.localStorage.setItem("mostrarNomes", mostrarNomes ? "1" : "0");
-    }
-  }, [mostrarNomes, namesHydrated, canToggleNames]);
 
   useEffect(() => {
     const c = window.localStorage.getItem("coorte");

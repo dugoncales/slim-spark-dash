@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { useRoles } from "@/hooks/use-roles";
+import { useMostrarNomes } from "@/hooks/use-mostrar-nomes";
 import {
   fetchAll,
   serieParticipante,
@@ -53,7 +54,8 @@ function fmt(n: number | null | undefined, d = 1): string {
 function PacientePage() {
   const { id } = Route.useParams();
   const { session, loading: authLoading } = useAuth();
-  const { isAdmin, isGestorSaude, loading: rolesLoading } = useRoles();
+  const { loading: rolesLoading } = useRoles();
+  const { mostrarNomes } = useMostrarNomes();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -65,9 +67,6 @@ function PacientePage() {
     queryFn: fetchAll,
     enabled: !!session,
   });
-
-  // gestor (não-gestor_saude / não-admin) vê dados clínicos mas com nome anonimizado.
-  const mostrarNome = isAdmin || isGestorSaude;
 
   const participante = useMemo(
     () => data?.participantes.find((p) => p.id === id) ?? null,
@@ -108,7 +107,7 @@ function PacientePage() {
     );
   }
 
-  const nomeExibido = nomeOuNumero(participante, mostrarNome);
+  const nomeExibido = nomeOuNumero(participante, mostrarNomes);
   const pesoInicial = serie[0]?.peso ?? participante.peso_inicial;
   const ultimo = serie[serie.length - 1];
   const pesoAtual = ultimo?.peso ?? null;
