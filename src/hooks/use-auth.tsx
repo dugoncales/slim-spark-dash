@@ -9,26 +9,56 @@ interface AuthCtx {
   signOut: () => Promise<void>;
 }
 
-const Ctx = createContext<AuthCtx>({ session: null, user: null, loading: true, signOut: async () => {} });
+const Ctx = createContext<AuthCtx>({
+  session: null,
+  user: null,
+  loading: true,
+  signOut: async () => {},
+});
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
+    let unsubscribe: (() => void) | undefined;
+    try {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, s) => {
+        setSession(s);
+        setLoading(false);
+      });
+      unsubscribe = () => subscription.unsubscribe();
+      supabase.auth
+        .getSession()
+        .then(({ data }) => {
+          setSession(data.session);
+        })
+        .catch((err) => {
+          console.error("[auth] getSession failed", err);
+        })
+        .finally(() => setLoading(false));
+    } catch (err) {
+      // Supabase client failed to initialize (missing env vars, bad config, etc.).
+      // Surface an unauthenticated state so the router can redirect to /login.
+      console.error("[auth] subscription failed", err);
       setLoading(false);
-    });
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
-    return () => subscription.unsubscribe();
+    }
+    return () => unsubscribe?.();
   }, []);
 
   return (
-    <Ctx.Provider value={{ session, user: session?.user ?? null, loading, signOut: async () => { await supabase.auth.signOut(); } }}>
+    <Ctx.Provider
+      value={{
+        session,
+        user: session?.user ?? null,
+        loading,
+        signOut: async () => {
+          await supabase.auth.signOut();
+        },
+      }}
+    >
       {children}
     </Ctx.Provider>
   );
