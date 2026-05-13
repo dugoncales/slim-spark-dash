@@ -1,4 +1,3 @@
-import { Card } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis, Legend } from "recharts";
 
@@ -12,18 +11,14 @@ export type EvolucaoPoint = {
 
 export function EvolucaoChart({ data }: { data: EvolucaoPoint[] }) {
   const config = {
-    pesoMedio: { label: "Peso médio (kg)", color: "hsl(var(--primary))" },
-    imcMedio: { label: "IMC médio (kg/m²)", color: "hsl(var(--accent-foreground))" },
-    circMedia: { label: "Circunferência média (cm)", color: "hsl(var(--destructive))" },
+    pesoMedio: { label: "Peso médio (kg)", color: "var(--chart-1)" },
+    imcMedio: { label: "IMC médio (kg/m²)", color: "var(--chart-2)" },
+    circMedia: { label: "Circunferência média (cm)", color: "var(--chart-3)" },
   } as const;
 
   return (
-    <Card className="p-4">
-      <div className="mb-2">
-        <h3 className="font-semibold text-foreground">Evolução do grupo ao longo dos meses</h3>
-        <p className="text-xs text-muted-foreground">Médias por mês — apenas pacientes já iniciados</p>
-      </div>
-      <ChartContainer config={config} className="h-[280px] w-full">
+    <div>
+      <ChartContainer config={config} className="h-[380px] w-full">
         <LineChart data={data} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="mesLabel" tick={{ fontSize: 11 }} />
@@ -40,11 +35,38 @@ export function EvolucaoChart({ data }: { data: EvolucaoPoint[] }) {
             }
           />
           <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Line yAxisId="left" type="monotone" dataKey="pesoMedio" stroke="var(--color-pesoMedio)" strokeWidth={2} dot={{ r: 3 }} name="Peso médio (kg)" connectNulls />
-          <Line yAxisId="right" type="monotone" dataKey="imcMedio" stroke="var(--color-imcMedio)" strokeWidth={2} dot={{ r: 3 }} name="IMC médio (kg/m²)" connectNulls />
-          <Line yAxisId="left" type="monotone" dataKey="circMedia" stroke="var(--color-circMedia)" strokeWidth={2} dot={{ r: 3 }} name="Circunferência média (cm)" connectNulls />
+          <Line
+            yAxisId="left"
+            type="monotone"
+            dataKey="pesoMedio"
+            stroke="var(--color-pesoMedio)"
+            strokeWidth={2}
+            dot={{ r: 3 }}
+            name="Peso médio (kg)"
+            connectNulls
+          />
+          <Line
+            yAxisId="right"
+            type="monotone"
+            dataKey="imcMedio"
+            stroke="var(--color-imcMedio)"
+            strokeWidth={2}
+            dot={{ r: 3 }}
+            name="IMC médio (kg/m²)"
+            connectNulls
+          />
+          <Line
+            yAxisId="left"
+            type="monotone"
+            dataKey="circMedia"
+            stroke="var(--color-circMedia)"
+            strokeWidth={2}
+            dot={{ r: 3 }}
+            name="Circunferência média (cm)"
+            connectNulls
+          />
         </LineChart>
       </ChartContainer>
-    </Card>
+    </div>
   );
 }

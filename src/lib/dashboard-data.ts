@@ -12,7 +12,10 @@ export type Participante = {
   mes_inicio: string | null;
 };
 
-export function calcImc(peso: number | null | undefined, altura: number | null | undefined): number | null {
+export function calcImc(
+  peso: number | null | undefined,
+  altura: number | null | undefined,
+): number | null {
   if (!peso || !altura || altura <= 0) return null;
   return Math.round((peso / (altura * altura)) * 100) / 100;
 }
@@ -44,13 +47,28 @@ export async function fetchAll() {
 }
 
 export const MESES_PT = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
 ];
 
-export function formatMes(iso: string) {
-  const [y, m] = iso.split("-");
-  return `${MESES_PT[parseInt(m, 10) - 1]}/${y}`;
+export function formatMes(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const parts = iso.split("-");
+  if (parts.length < 2) return "";
+  const [y, m] = parts;
+  const monthIdx = parseInt(m, 10) - 1;
+  const monthName = MESES_PT[monthIdx] ?? "";
+  return `${monthName}/${y}`;
 }
 
 export function nomeOuNumero(p: Participante, mostrar: boolean) {
@@ -59,24 +77,44 @@ export function nomeOuNumero(p: Participante, mostrar: boolean) {
 
 export function mesesDistintosInicio(participantes: Participante[]): string[] {
   const s = new Set<string>();
-  participantes.forEach(p => { if (p.mes_inicio) s.add(p.mes_inicio); });
+  participantes.forEach((p) => {
+    if (p.mes_inicio) s.add(p.mes_inicio);
+  });
   return Array.from(s).sort();
 }
 
-export type EvolucaoMes = { mes: string; mesLabel: string; pesoMedio: number | null; imcMedio: number | null; circMedia: number | null; n: number };
+export type EvolucaoMes = {
+  mes: string;
+  mesLabel: string;
+  pesoMedio: number | null;
+  imcMedio: number | null;
+  circMedia: number | null;
+  n: number;
+};
 
-export function calcEvolucaoGrupo(participantes: Participante[], medicoes: Medicao[], coorte?: string | null): EvolucaoMes[] {
-  const baseParts = coorte ? participantes.filter(p => p.mes_inicio === coorte) : participantes;
-  const ids = new Set(baseParts.map(p => p.id));
-  const inicioById = new Map(baseParts.map(p => [p.id, p.mes_inicio] as const));
+export function calcEvolucaoGrupo(
+  participantes: Participante[],
+  medicoes: Medicao[],
+  coorte?: string | null,
+): EvolucaoMes[] {
+  const baseParts = coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes;
+  const ids = new Set(baseParts.map((p) => p.id));
+  const inicioById = new Map(baseParts.map((p) => [p.id, p.mes_inicio] as const));
   const mesesSet = new Set<string>();
-  medicoes.forEach(m => { if (ids.has(m.participante_id)) mesesSet.add(m.mes_referencia); });
+  medicoes.forEach((m) => {
+    if (ids.has(m.participante_id)) mesesSet.add(m.mes_referencia);
+  });
   const meses = Array.from(mesesSet).sort();
 
-  return meses.map(mes => {
-    const ms = medicoes.filter(m => m.mes_referencia === mes && ids.has(m.participante_id) && (inicioById.get(m.participante_id) ?? mes) <= mes);
+  return meses.map((mes) => {
+    const ms = medicoes.filter(
+      (m) =>
+        m.mes_referencia === mes &&
+        ids.has(m.participante_id) &&
+        (inicioById.get(m.participante_id) ?? mes) <= mes,
+    );
     const avg = (key: "peso" | "imc" | "circunferencia") => {
-      const vals = ms.map(m => m[key]).filter((v): v is number => v != null);
+      const vals = ms.map((m) => m[key]).filter((v): v is number => v != null);
       return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
     };
     return {
@@ -90,14 +128,31 @@ export function calcEvolucaoGrupo(participantes: Participante[], medicoes: Medic
   });
 }
 
-export type MarcosResumo = { atingiram5: number; atingiram10: number; total: number; perdaMediaAcumPct: number };
+export type MarcosResumo = {
+  atingiram5: number;
+  atingiram10: number;
+  total: number;
+  perdaMediaAcumPct: number;
+};
 
-export function calcMarcos(participantes: Participante[], medicoes: Medicao[], coorte?: string | null): MarcosResumo {
-  const baseParts = coorte ? participantes.filter(p => p.mes_inicio === coorte) : participantes;
-  let atingiram5 = 0, atingiram10 = 0, somaPct = 0, total = 0;
-  baseParts.forEach(p => {
+export function calcMarcos(
+  participantes: Participante[],
+  medicoes: Medicao[],
+  coorte?: string | null,
+): MarcosResumo {
+  const baseParts = coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes;
+  let atingiram5 = 0,
+    atingiram10 = 0,
+    somaPct = 0,
+    total = 0;
+  baseParts.forEach((p) => {
     const ms = medicoes
-      .filter(m => m.participante_id === p.id && m.peso != null && (!p.mes_inicio || m.mes_referencia > p.mes_inicio))
+      .filter(
+        (m) =>
+          m.participante_id === p.id &&
+          m.peso != null &&
+          (!p.mes_inicio || m.mes_referencia > p.mes_inicio),
+      )
       .sort((a, b) => a.mes_referencia.localeCompare(b.mes_referencia));
     const ultima = ms[ms.length - 1];
     if (!ultima || !p.peso_inicial) return;
