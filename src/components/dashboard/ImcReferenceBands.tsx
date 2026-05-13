@@ -71,45 +71,42 @@ export const IMC_BANDS: ImcBand[] = [
 ];
 
 /**
- * Renderiza as faixas IMC como filhos de um Recharts chart.
- * `yAxisId` é necessário quando o gráfico tem múltiplos eixos Y.
- * `showLabels` desenha o nome da faixa dentro de cada área (útil quando a
- * faixa é o foco visual do gráfico).
+ * Retorna um ARRAY de elementos `ReferenceArea` para uso como filhos
+ * diretos de um chart Recharts. Implementado como função (não componente)
+ * porque Recharts 2.x não atravessa Fragments ao iterar filhos via
+ * `displayName` — um `<ImcReferenceBands />` retornando `<>...</>` faz com
+ * que as áreas fiquem invisíveis. Chame inline: `{imcReferenceAreas(...)}`.
  */
-export function ImcReferenceBands({
-  yAxisId,
-  showLabels = false,
-}: {
-  yAxisId?: string;
-  showLabels?: boolean;
-}) {
-  return (
-    <>
-      {IMC_BANDS.map((b) => (
-        <ReferenceArea
-          key={b.id}
-          yAxisId={yAxisId}
-          y1={b.min}
-          y2={b.max}
-          fill={b.color}
-          fillOpacity={0.15}
-          stroke="none"
-          ifOverflow="extendDomain"
-          label={
-            showLabels
-              ? {
-                  value: b.short,
-                  position: "insideLeft",
-                  fontSize: 10,
-                  fill: b.textColor,
-                  style: { fontWeight: 600 },
-                }
-              : undefined
-          }
-        />
-      ))}
-    </>
-  );
+export function imcReferenceAreas(
+  opts: {
+    yAxisId?: string;
+    showLabels?: boolean;
+  } = {},
+) {
+  const { yAxisId, showLabels = false } = opts;
+  return IMC_BANDS.map((b) => (
+    <ReferenceArea
+      key={b.id}
+      yAxisId={yAxisId}
+      y1={b.min}
+      y2={b.max}
+      fill={b.color}
+      fillOpacity={0.15}
+      stroke="none"
+      ifOverflow="extendDomain"
+      label={
+        showLabels
+          ? {
+              value: b.short,
+              position: "insideLeft",
+              fontSize: 10,
+              fill: b.textColor,
+              style: { fontWeight: 600 },
+            }
+          : undefined
+      }
+    />
+  ));
 }
 
 export function ImcBandsLegend({ className = "" }: { className?: string }) {

@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { rotuloMesRelativo } from "@/lib/dashboard-data";
-import { ImcReferenceBands, ImcBandsLegend } from "./ImcReferenceBands";
+import { imcReferenceAreas, ImcBandsLegend } from "./ImcReferenceBands";
 
 export type MultiMonthRow = {
   label: string;
@@ -62,7 +62,7 @@ export function MultiMonthBarChart({ title, rows, metric, unit, height = 420, on
       <ResponsiveContainer width="100%" height={height}>
         <BarChart data={data} margin={{ top: 24, right: 12, left: -4, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-          {metric === "imc" && <ImcReferenceBands />}
+          {metric === "imc" && imcReferenceAreas()}
           <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
           <YAxis
             tick={{ fontSize: 11 }}

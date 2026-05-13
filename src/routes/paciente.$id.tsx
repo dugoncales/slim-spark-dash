@@ -39,7 +39,7 @@ import {
   formatMes,
   nomeOuNumero,
 } from "@/lib/dashboard-data";
-import { ImcReferenceBands, ImcBandsLegend } from "@/components/dashboard/ImcReferenceBands";
+import { imcReferenceAreas, ImcBandsLegend } from "@/components/dashboard/ImcReferenceBands";
 
 export const Route = createFileRoute("/paciente/$id")({
   component: PacientePage,
@@ -394,6 +394,13 @@ function SeriePeso({
   serie: SerieRow[];
   idealRange: { min: number; max: number } | null;
 }) {
+  // Domínio explícito que inclui a faixa saudável + o peso do paciente.
+  // Sem isso, a ReferenceArea pode cair fora do viewport mesmo com extendDomain.
+  const weights = serie.map((s) => s.peso).filter((w): w is number => w != null);
+  const dataMin = weights.length ? Math.min(...weights) : 0;
+  const dataMax = weights.length ? Math.max(...weights) : 100;
+  const yMin = Math.floor(Math.min(dataMin, idealRange?.min ?? dataMin) - 5);
+  const yMax = Math.ceil(Math.max(dataMax, idealRange?.max ?? dataMax) + 5);
   return (
     <div>
       <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5">
@@ -403,12 +410,6 @@ function SeriePeso({
       <ResponsiveContainer width="100%" height={280}>
         <LineChart data={serie} margin={{ top: 8, right: 12, left: -4, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-          <XAxis dataKey="mesLabel" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-          <YAxis
-            tick={{ fontSize: 11 }}
-            stroke="var(--muted-foreground)"
-            domain={["auto", "auto"]}
-          />
           {idealRange && (
             <ReferenceArea
               y1={idealRange.min}
@@ -417,7 +418,6 @@ function SeriePeso({
               fillOpacity={0.15}
               stroke="#16a34a"
               strokeDasharray="3 3"
-              ifOverflow="extendDomain"
               label={{
                 value: "Faixa saudável",
                 position: "insideRight",
@@ -427,6 +427,8 @@ function SeriePeso({
               }}
             />
           )}
+          <XAxis dataKey="mesLabel" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
+          <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" domain={[yMin, yMax]} />
           <Tooltip
             contentStyle={{
               background: "var(--card)",
@@ -463,9 +465,8 @@ function SeriePeso({
 
 function SerieImc({ serie }: { serie: SerieRow[] }) {
   const imcMax = Math.max(0, ...serie.map((s) => s.imc ?? 0));
-  // Garante que todas as 6 faixas (até IMC 40+) fiquem visíveis, mesmo quando
-  // o paciente tem IMC baixo.
-  const yMax = Math.max(45, imcMax + 5);
+  // Cobre todas as 6 faixas (até IMC 40+) mesmo quando o paciente tem IMC baixo.
+  const yMax = Math.max(50, imcMax + 5);
   return (
     <div>
       <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5">
@@ -475,9 +476,14 @@ function SerieImc({ serie }: { serie: SerieRow[] }) {
       <ResponsiveContainer width="100%" height={280}>
         <LineChart data={serie} margin={{ top: 8, right: 12, left: -4, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-          <ImcReferenceBands showLabels />
+          {imcReferenceAreas({ showLabels: true })}
           <XAxis dataKey="mesLabel" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-          <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" domain={[0, yMax]} />
+          <YAxis
+            tick={{ fontSize: 11 }}
+            stroke="var(--muted-foreground)"
+            domain={[0, yMax]}
+            allowDataOverflow={false}
+          />
           <Tooltip
             contentStyle={{
               background: "var(--card)",
