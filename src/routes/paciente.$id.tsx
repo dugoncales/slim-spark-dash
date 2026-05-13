@@ -24,6 +24,7 @@ import {
   Legend,
   ResponsiveContainer,
   Tooltip,
+  ReferenceArea,
   ReferenceLine,
 } from "recharts";
 import { Card } from "@/components/ui/card";
@@ -409,30 +410,22 @@ function SeriePeso({
             domain={["auto", "auto"]}
           />
           {idealRange && (
-            <>
-              <ReferenceLine
-                y={idealRange.min}
-                stroke="#16a34a"
-                strokeDasharray="4 4"
-                label={{
-                  value: `Saudável mín. ${idealRange.min.toLocaleString("pt-BR")}`,
-                  fontSize: 10,
-                  fill: "#16a34a",
-                  position: "insideBottomRight",
-                }}
-              />
-              <ReferenceLine
-                y={idealRange.max}
-                stroke="#16a34a"
-                strokeDasharray="4 4"
-                label={{
-                  value: `Saudável máx. ${idealRange.max.toLocaleString("pt-BR")}`,
-                  fontSize: 10,
-                  fill: "#16a34a",
-                  position: "insideTopRight",
-                }}
-              />
-            </>
+            <ReferenceArea
+              y1={idealRange.min}
+              y2={idealRange.max}
+              fill="#22c55e"
+              fillOpacity={0.15}
+              stroke="#16a34a"
+              strokeDasharray="3 3"
+              ifOverflow="extendDomain"
+              label={{
+                value: "Faixa saudável",
+                position: "insideRight",
+                fontSize: 10,
+                fill: "#15803d",
+                style: { fontWeight: 600 },
+              }}
+            />
           )}
           <Tooltip
             contentStyle={{
@@ -469,6 +462,10 @@ function SeriePeso({
 }
 
 function SerieImc({ serie }: { serie: SerieRow[] }) {
+  const imcMax = Math.max(0, ...serie.map((s) => s.imc ?? 0));
+  // Garante que todas as 6 faixas (até IMC 40+) fiquem visíveis, mesmo quando
+  // o paciente tem IMC baixo.
+  const yMax = Math.max(45, imcMax + 5);
   return (
     <div>
       <h4 className="text-xs font-semibold mb-2 flex items-center gap-1.5">
@@ -478,13 +475,9 @@ function SerieImc({ serie }: { serie: SerieRow[] }) {
       <ResponsiveContainer width="100%" height={280}>
         <LineChart data={serie} margin={{ top: 8, right: 12, left: -4, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-          <ImcReferenceBands />
+          <ImcReferenceBands showLabels />
           <XAxis dataKey="mesLabel" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-          <YAxis
-            tick={{ fontSize: 11 }}
-            stroke="var(--muted-foreground)"
-            domain={["auto", "auto"]}
-          />
+          <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" domain={[0, yMax]} />
           <Tooltip
             contentStyle={{
               background: "var(--card)",
@@ -529,6 +522,30 @@ function SerieCirc({ serie }: { serie: SerieRow[] }) {
             tick={{ fontSize: 11 }}
             stroke="var(--muted-foreground)"
             domain={["auto", "auto"]}
+          />
+          <ReferenceLine
+            y={88}
+            stroke="#f97316"
+            strokeDasharray="4 4"
+            ifOverflow="extendDomain"
+            label={{
+              value: "Risco cardiovascular ♀ (>88cm)",
+              fontSize: 10,
+              fill: "#f97316",
+              position: "insideTopRight",
+            }}
+          />
+          <ReferenceLine
+            y={102}
+            stroke="#ef4444"
+            strokeDasharray="4 4"
+            ifOverflow="extendDomain"
+            label={{
+              value: "Risco elevado ♀ (>102cm)",
+              fontSize: 10,
+              fill: "#ef4444",
+              position: "insideTopRight",
+            }}
           />
           <Tooltip
             contentStyle={{
