@@ -780,15 +780,7 @@ function Dashboard() {
 
       <header className="border-b bg-card">
         <div className="mx-auto max-w-[1600px] px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
-              H
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-primary tracking-tight">HEALTHBIT</h1>
-              <p className="text-[10px] text-muted-foreground -mt-1">uma empresa RDsaúde</p>
-            </div>
-          </div>
+          <img src="/logo.webp" alt="HEALTHBIT" className="h-10 w-auto object-contain" />
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="hidden md:inline">{user?.email}</span>
           </div>
@@ -856,17 +848,17 @@ function Dashboard() {
 
         <div id="dashboard-export" className="space-y-6">
           {exportMode && (
-            <div className="flex items-center gap-3 pb-4 border-b">
-              <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl">
-                H
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-primary leading-none">HEALTHBIT</h1>
-                <p className="text-xs text-muted-foreground mt-1">
-                  uma empresa RDsaúde · Acompanhamento de IMC e Peso
-                  {mesSel ? ` · ${formatMes(mesSel)}` : ""}
-                </p>
-              </div>
+            <div className="flex items-center justify-between gap-4 pb-4 border-b">
+              <img
+                src="/logo.webp"
+                alt="HEALTHBIT — uma empresa RDsaúde"
+                height={40}
+                className="h-10 w-auto object-contain"
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                Acompanhamento de IMC e Peso
+                {mesSel ? ` · ${formatMes(mesSel)}` : ""}
+              </p>
             </div>
           )}
 

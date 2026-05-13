@@ -34,13 +34,22 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-1.5">
-          <div className="h-8 w-8 shrink-0 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold">
+          {/* Collapsed: small H mark so the rail isn't blank. Hidden when expanded. */}
+          <div className="hidden h-8 w-8 shrink-0 rounded-md bg-primary items-center justify-center text-primary-foreground font-bold group-data-[collapsible=icon]:flex">
             H
           </div>
-          <div className="group-data-[collapsible=icon]:hidden flex-1 min-w-0">
-            <p className="text-sm font-bold text-primary leading-none">HEALTHBIT</p>
-            <p className="text-[10px] text-muted-foreground">RDsaúde</p>
-          </div>
+          {/* Expanded: full HEALTHBIT wordmark. Hidden when collapsed. */}
+          <Link
+            to="/"
+            className="group-data-[collapsible=icon]:hidden flex-1 min-w-0 flex items-center"
+            aria-label="HEALTHBIT — voltar ao dashboard"
+          >
+            <img
+              src="/logo.webp"
+              alt="HEALTHBIT — uma empresa RDsaúde"
+              className="max-h-12 w-auto object-contain"
+            />
+          </Link>
           <Button
             variant="ghost"
             size="icon"
