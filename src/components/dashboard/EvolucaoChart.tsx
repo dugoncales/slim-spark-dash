@@ -1,5 +1,6 @@
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis, Legend } from "recharts";
+import { ImcReferenceBands, ImcBandsLegend } from "./ImcReferenceBands";
 
 export type EvolucaoPoint = {
   mesLabel: string;
@@ -24,6 +25,7 @@ export function EvolucaoChart({ data }: { data: EvolucaoPoint[] }) {
           <XAxis dataKey="mesLabel" tick={{ fontSize: 11 }} />
           <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
           <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} />
+          <ImcReferenceBands yAxisId="right" />
           <ChartTooltip
             content={
               <ChartTooltipContent
@@ -67,6 +69,7 @@ export function EvolucaoChart({ data }: { data: EvolucaoPoint[] }) {
           />
         </LineChart>
       </ChartContainer>
+      <ImcBandsLegend className="mt-2" />
     </div>
   );
 }

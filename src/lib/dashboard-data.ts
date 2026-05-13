@@ -135,6 +135,68 @@ export type MarcosResumo = {
   perdaMediaAcumPct: number;
 };
 
+/**
+ * Faixa de peso saudável (IMC 18.5–24.9 × altura²).
+ * Retorna null se altura ausente/inválida.
+ */
+export function calcPesoIdealRange(
+  altura: number | null | undefined,
+): { min: number; max: number } | null {
+  if (!altura || altura <= 0) return null;
+  return {
+    min: Math.round(18.5 * altura * altura * 10) / 10,
+    max: Math.round(24.9 * altura * altura * 10) / 10,
+  };
+}
+
+export type MedicaoSerie = {
+  mes: string;
+  mesLabel: string;
+  peso: number | null;
+  imc: number | null;
+  circunferencia: number | null;
+};
+
+/**
+ * Série temporal de um participante: ponto inicial (peso_inicial/imc_inicial/circ_inicial
+ * em mes_inicio) + cada medição mensal ordenada. IMC ausente em uma medição é
+ * recomputado a partir de peso + altura.
+ */
+export function serieParticipante(p: Participante, medicoes: Medicao[]): MedicaoSerie[] {
+  const ms = medicoes
+    .filter((m) => m.participante_id === p.id)
+    .sort((a, b) => a.mes_referencia.localeCompare(b.mes_referencia));
+
+  const out: MedicaoSerie[] = [];
+  if (p.mes_inicio) {
+    out.push({
+      mes: p.mes_inicio,
+      mesLabel: formatMes(p.mes_inicio),
+      peso: p.peso_inicial ?? null,
+      imc: p.imc_inicial ?? calcImc(p.peso_inicial, p.altura),
+      circunferencia: p.circunferencia_inicial ?? null,
+    });
+  }
+  ms.forEach((m) => {
+    // Evita duplicar o mês inicial caso haja medicao no mesmo mes_inicio
+    if (p.mes_inicio && m.mes_referencia === p.mes_inicio) return;
+    out.push({
+      mes: m.mes_referencia,
+      mesLabel: formatMes(m.mes_referencia),
+      peso: m.peso,
+      imc: m.imc ?? calcImc(m.peso, p.altura),
+      circunferencia: m.circunferencia,
+    });
+  });
+  return out;
+}
+
+export function rotuloMesRelativo(idx: number): string {
+  if (idx === 0) return "Inicial";
+  const ordinais = ["1º", "2º", "3º", "4º", "5º", "6º", "7º", "8º", "9º", "10º", "11º", "12º"];
+  return `${ordinais[idx - 1] ?? `${idx}º`} Mês`;
+}
+
 export function calcMarcos(
   participantes: Participante[],
   medicoes: Medicao[],

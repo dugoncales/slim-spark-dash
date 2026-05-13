@@ -1,4 +1,4 @@
-﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
+﻿import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -39,9 +39,10 @@ import {
   mesesDistintosInicio,
   calcEvolucaoGrupo,
   calcMarcos,
+  serieParticipante,
 } from "@/lib/dashboard-data";
 import { KpiCard } from "@/components/dashboard/KpiCard";
-import { ComparisonChart } from "@/components/dashboard/ComparisonChart";
+import { MultiMonthBarChart, type MultiMonthRow } from "@/components/dashboard/MultiMonthBarChart";
 import { UploadDialog } from "@/components/dashboard/UploadDialog";
 import { EvolucaoChart } from "@/components/dashboard/EvolucaoChart";
 import { CollapsibleSection } from "@/components/dashboard/CollapsibleSection";
@@ -264,15 +265,20 @@ function Dashboard() {
     origIdx: rows.indexOf(r),
   }));
 
-  const chartData = rows.map((r, i) => ({
-    label: mostrarNomes ? r.p.nome.split(" ")[0] : String(i + 1),
-    pesoIni: r.p.peso_inicial,
-    pesoMes: r.m.peso ?? 0,
-    imcIni: r.p.imc_inicial,
-    imcMes: r.m.imc ?? 0,
-    circIni: r.p.circunferencia_inicial ?? 0,
-    circMes: r.m.circunferencia ?? 0,
-  }));
+  // Para o gráfico multi-mês: para cada paciente em `rows`, montamos a série
+  // completa (ponto inicial + todas as medições) e extraímos peso / IMC.
+  // O índice 0 = inicial, 1 = 1º mês, etc. Bars com valor null não renderizam.
+  const multiMonthRows: { peso: MultiMonthRow[]; imc: MultiMonthRow[] } = (() => {
+    const peso: MultiMonthRow[] = [];
+    const imc: MultiMonthRow[] = [];
+    rows.forEach((r, i) => {
+      const label = mostrarNomes ? r.p.nome.split(" ")[0] : String(i + 1);
+      const serie = serieParticipante(r.p, allMedicoes);
+      peso.push({ label, values: serie.map((s) => s.peso) });
+      imc.push({ label, values: serie.map((s) => s.imc) });
+    });
+    return { peso, imc };
+  })();
 
   const evolucao = calcEvolucaoGrupo(allParticipantes, allMedicoes, coorteAtiva);
   const marcos = calcMarcos(allParticipantes, allMedicoes, coorteAtiva);
@@ -455,7 +461,15 @@ function Dashboard() {
           <tbody>
             {rows.map((r, i) => (
               <tr key={r.p.id} className="border-t hover:bg-muted/30">
-                <td className="px-4 py-2.5 font-medium">{displayName(r.p, i)}</td>
+                <td className="px-4 py-2.5 font-medium">
+                  <Link
+                    to="/paciente/$id"
+                    params={{ id: r.p.id }}
+                    className="text-primary hover:underline"
+                  >
+                    {displayName(r.p, i)}
+                  </Link>
+                </td>
                 <td className="px-4 py-2.5">{fmt(r.p.imc_inicial)}</td>
                 <td className="px-4 py-2.5">{fmt(r.p.peso_inicial)}</td>
                 <td className="px-4 py-2.5">{fmt(r.m.peso ?? 0)}</td>
@@ -566,31 +580,33 @@ function Dashboard() {
   const comparacaoSection = (
     <CollapsibleSection
       id="comparacao"
-      title="Peso e IMC: inicial vs mês"
-      subtitle="Comparativo por pessoa"
+      title="Evolução por participante"
+      subtitle="Peso e IMC ao longo de todos os meses registrados"
       icon={BarChart3}
       {...sectionExportProps}
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-        <ComparisonChart
-          title="Peso Inicial vs Mês (kg)"
-          data={chartData}
-          keyA="pesoIni"
-          keyB="pesoMes"
-          labelA="Peso Inicial (kg)"
-          labelB="Peso Mês (kg)"
+        <MultiMonthBarChart
+          title="Peso por mês (kg)"
+          rows={multiMonthRows.peso}
+          metric="peso"
           unit="Peso (kg)"
           height={420}
+          onBarClick={(idx) => {
+            const p = rows[idx]?.p;
+            if (p) navigate({ to: "/paciente/$id", params: { id: p.id } });
+          }}
         />
-        <ComparisonChart
-          title="IMC Inicial vs Mês (kg/m²)"
-          data={chartData}
-          keyA="imcIni"
-          keyB="imcMes"
-          labelA="IMC Inicial"
-          labelB="IMC Mês"
+        <MultiMonthBarChart
+          title="IMC por mês (kg/m²)"
+          rows={multiMonthRows.imc}
+          metric="imc"
           unit="IMC (kg/m²)"
           height={420}
+          onBarClick={(idx) => {
+            const p = rows[idx]?.p;
+            if (p) navigate({ to: "/paciente/$id", params: { id: p.id } });
+          }}
         />
       </div>
     </CollapsibleSection>
