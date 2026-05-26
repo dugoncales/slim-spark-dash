@@ -73,24 +73,18 @@ function AdminPage() {
     setBusy(u.user_id + role);
     try {
       if (hasIt) {
-        const { error } = await supabase.from("user_roles").delete()
-          .eq("user_id", u.user_id).eq("role", role);
-        if (error) throw error;
-        await supabase.from("role_audit_log").insert({
-          target_user_id: u.user_id, target_email: u.email,
-          changed_by: user?.id, changed_by_email: user?.email,
-          action: "revoked", role,
+        const { error } = await supabase.rpc("revoke_user_role", {
+          _target_user_id: u.user_id,
+          _role: role,
         });
+        if (error) throw error;
         toast.success(`Permissão "${role}" removida de ${u.email}`);
       } else {
-        const { error } = await supabase.from("user_roles")
-          .insert({ user_id: u.user_id, role });
-        if (error) throw error;
-        await supabase.from("role_audit_log").insert({
-          target_user_id: u.user_id, target_email: u.email,
-          changed_by: user?.id, changed_by_email: user?.email,
-          action: "granted", role,
+        const { error } = await supabase.rpc("grant_user_role", {
+          _target_user_id: u.user_id,
+          _role: role,
         });
+        if (error) throw error;
         toast.success(`Permissão "${role}" concedida a ${u.email}`);
       }
       usersQ.refetch();
