@@ -372,11 +372,25 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
     if (!mesSel) return;
     const toSave = Object.entries(edits);
     if (!toSave.length) { toast.info("Nada para salvar."); return; }
-    const numericFields = new Set(["peso", "imc", "circunferencia", "consultas_endocrino", "consultas_nutri", "consultas_psico", "consultas_edfisica"]);
+    const numericFields = new Set([
+      "peso", "imc", "circunferencia",
+      "consultas_endocrino", "consultas_nutri", "consultas_psico", "consultas_edfisica",
+      "consultas_endocrino_agendadas", "consultas_nutri_agendadas", "consultas_psico_agendadas", "consultas_edfisica_agendadas",
+      "ativ_fisica_dias_semana",
+    ]);
+    const booleanFields = new Set([
+      "nutri_reduziu_acucar", "nutri_reduziu_ultraprocessados", "nutri_aumentou_proteina",
+      "nutri_aumentou_vegetais", "nutri_controle_porcoes", "nutri_reduziu_alcool",
+    ]);
     for (const [pid, fields] of toSave) {
       const payload: Record<string, unknown> = { participante_id: pid, mes_referencia: mesSel };
       for (const [k, v] of Object.entries(fields)) {
-        payload[k] = v == null ? null : numericFields.has(k) ? Number(v) : v;
+        if (v == null) payload[k] = null;
+        else if (booleanFields.has(k)) payload[k] = Boolean(v);
+        else if (numericFields.has(k)) payload[k] = Number(v);
+        else payload[k] = v;
+      }
+
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await supabase.from("medicoes").upsert(payload as any, { onConflict: "participante_id,mes_referencia" });
