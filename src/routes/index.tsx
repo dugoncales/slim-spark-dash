@@ -867,6 +867,8 @@ function Dashboard() {
     tabela: tabelaSection,
     comparacao: comparacaoSection,
     evolucao: evolucaoSection,
+    adesao: adesaoSection,
+
     insights: insightsSection,
     top: topSection,
     resumo: resumoSection,
