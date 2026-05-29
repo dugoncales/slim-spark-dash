@@ -431,10 +431,12 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
                 <th className="px-2 py-2">Circ.</th>
                 <th className="px-2 py-2">Medicam.</th>
                 <th className="px-2 py-2">Dose</th>
-                <th className="px-2 py-2">Endo</th>
-                <th className="px-2 py-2">Nutri</th>
-                <th className="px-2 py-2">Psico</th>
-                <th className="px-2 py-2">Ed.F</th>
+                <th className="px-2 py-2" title="Realizadas / Agendadas">Endo r/a</th>
+                <th className="px-2 py-2" title="Realizadas / Agendadas">Nutri r/a</th>
+                <th className="px-2 py-2" title="Realizadas / Agendadas">Psico r/a</th>
+                <th className="px-2 py-2" title="Realizadas / Agendadas">Ed.F r/a</th>
+                <th className="px-2 py-2">Ativ. física</th>
+                <th className="px-2 py-2">Dias/sem</th>
                 <th className="px-2 py-2">Obs</th>
               </tr>
             </thead>
