@@ -21,6 +21,7 @@ import {
   ChevronRight,
   MousePointer2,
   HeartPulse,
+} from "lucide-react";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card } from "@/components/ui/card";
