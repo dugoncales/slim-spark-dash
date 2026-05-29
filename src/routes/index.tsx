@@ -286,6 +286,14 @@ function Dashboard() {
   })();
 
   const evolucao = calcEvolucaoGrupo(allParticipantes, allMedicoes, coorteAtiva);
+  const evolAtivFisica = calcEvolucaoAtividadeFisica(allParticipantes, allMedicoes, coorteAtiva);
+  const evolNutricao = calcEvolucaoNutricao(allParticipantes, allMedicoes, coorteAtiva);
+  const evolAderencia = calcEvolucaoAderenciaConsultas(allParticipantes, allMedicoes, coorteAtiva);
+  const temDadosAdesao =
+    evolAtivFisica.some((m) => m.n > 0) ||
+    evolNutricao.some((m) => m.n > 0) ||
+    evolAderencia.some((m) => m.media != null);
+
   const marcos = calcMarcos(allParticipantes, allMedicoes, coorteAtiva);
   const pct5 = marcos.total ? (marcos.atingiram5 / marcos.total) * 100 : 0;
   const pct10 = marcos.total ? (marcos.atingiram10 / marcos.total) * 100 : 0;
