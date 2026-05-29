@@ -390,9 +390,8 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
         else if (numericFields.has(k)) payload[k] = Number(v);
         else payload[k] = v;
       }
-
-      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await supabase.from("medicoes").upsert(payload as any, { onConflict: "participante_id,mes_referencia" });
       const { error } = await supabase.from("medicoes").upsert(payload as any, { onConflict: "participante_id,mes_referencia" });
       if (error) { toast.error(error.message); return; }
     }
