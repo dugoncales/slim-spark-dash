@@ -20,6 +20,40 @@ export function calcImc(
   return Math.round((peso / (altura * altura)) * 100) / 100;
 }
 
+export type AtivFisicaIntensidade = "nao_pratica" | "leve" | "moderada" | "intensa";
+
+export const ATIV_FISICA_LABEL: Record<AtivFisicaIntensidade, string> = {
+  nao_pratica: "Não pratica",
+  leve: "Leve",
+  moderada: "Moderada",
+  intensa: "Intensa",
+};
+
+export const ATIV_FISICA_COLOR: Record<AtivFisicaIntensidade, string> = {
+  nao_pratica: "#94a3b8", // slate-400
+  leve: "#fcd34d", // amber-300
+  moderada: "#34d399", // emerald-400
+  intensa: "#15803d", // emerald-700
+};
+
+export const NUTRI_FIELDS = [
+  { key: "nutri_reduziu_acucar", label: "Reduziu açúcar" },
+  { key: "nutri_reduziu_ultraprocessados", label: "Reduziu ultraprocessados" },
+  { key: "nutri_aumentou_proteina", label: "Aumentou proteína" },
+  { key: "nutri_aumentou_vegetais", label: "Aumentou vegetais" },
+  { key: "nutri_controle_porcoes", label: "Controle de porções" },
+  { key: "nutri_reduziu_alcool", label: "Reduziu álcool" },
+] as const;
+
+export type NutriField = (typeof NUTRI_FIELDS)[number]["key"];
+
+export const ESPECIALIDADES = [
+  { key: "endocrino", label: "Endócrino", realizadas: "consultas_endocrino", agendadas: "consultas_endocrino_agendadas" },
+  { key: "nutri", label: "Nutricionista", realizadas: "consultas_nutri", agendadas: "consultas_nutri_agendadas" },
+  { key: "psico", label: "Psicologia", realizadas: "consultas_psico", agendadas: "consultas_psico_agendadas" },
+  { key: "edfisica", label: "Educação Física", realizadas: "consultas_edfisica", agendadas: "consultas_edfisica_agendadas" },
+] as const;
+
 export type Medicao = {
   id: string;
   participante_id: string;
@@ -33,8 +67,21 @@ export type Medicao = {
   consultas_nutri: number | null;
   consultas_psico: number | null;
   consultas_edfisica: number | null;
+  consultas_endocrino_agendadas: number | null;
+  consultas_nutri_agendadas: number | null;
+  consultas_psico_agendadas: number | null;
+  consultas_edfisica_agendadas: number | null;
+  ativ_fisica_intensidade: AtivFisicaIntensidade | null;
+  ativ_fisica_dias_semana: number | null;
+  nutri_reduziu_acucar: boolean | null;
+  nutri_reduziu_ultraprocessados: boolean | null;
+  nutri_aumentou_proteina: boolean | null;
+  nutri_aumentou_vegetais: boolean | null;
+  nutri_controle_porcoes: boolean | null;
+  nutri_reduziu_alcool: boolean | null;
   observacao: string | null;
 };
+
 
 export async function fetchAll() {
   const [p, m] = await Promise.all([
