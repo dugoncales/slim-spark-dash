@@ -43,12 +43,21 @@ import {
   calcEvolucaoGrupo,
   calcMarcos,
   serieParticipante,
+  calcEvolucaoAtividadeFisica,
+  calcEvolucaoNutricao,
+  calcEvolucaoAderenciaConsultas,
 } from "@/lib/dashboard-data";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { MultiMonthBarChart, type MultiMonthRow } from "@/components/dashboard/MultiMonthBarChart";
 import { UploadDialog } from "@/components/dashboard/UploadDialog";
 import { EvolucaoChart } from "@/components/dashboard/EvolucaoChart";
 import { CollapsibleSection } from "@/components/dashboard/CollapsibleSection";
+import {
+  AtividadeFisicaChart,
+  NutricaoChart,
+  AderenciaConsultasChart,
+} from "@/components/dashboard/AderenciaCharts";
+
 import {
   ExportMenu,
   H2C_OPTIONS,
