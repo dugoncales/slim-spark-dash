@@ -684,6 +684,41 @@ function Dashboard() {
       </CollapsibleSection>
     ) : null;
 
+  const adesaoSection = temDadosAdesao ? (
+    <CollapsibleSection
+      id="adesao"
+      title="Adesão multidisciplinar"
+      subtitle="Atividade física, nutrição e consultas ao longo dos meses"
+      icon={HeartPulse}
+      {...sectionExportProps}
+    >
+      <div className="space-y-8">
+        <div>
+          <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+            <Activity className="h-4 w-4 text-primary" />
+            Atividade física — distribuição por intensidade
+          </h4>
+          <AtividadeFisicaChart data={evolAtivFisica} />
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+            <HeartPulse className="h-4 w-4 text-primary" />
+            Nutrição — mudanças reportadas
+          </h4>
+          <NutricaoChart data={evolNutricao} />
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+            <LineChartIcon className="h-4 w-4 text-primary" />
+            Adesão às consultas (realizadas ÷ agendadas)
+          </h4>
+          <AderenciaConsultasChart data={evolAderencia} />
+        </div>
+      </div>
+    </CollapsibleSection>
+  ) : null;
+
+
   const circTable = (
     <Card className="overflow-hidden">
       <div className="overflow-x-auto">
