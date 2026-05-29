@@ -272,4 +272,147 @@ export function calcMarcos(
     if (perdaPct <= -10) atingiram10 += 1;
   });
   return { atingiram5, atingiram10, total, perdaMediaAcumPct: total ? somaPct / total : 0 };
+  return { atingiram5, atingiram10, total, perdaMediaAcumPct: total ? somaPct / total : 0 };
 }
+
+/* ==================== Adesão multidisciplinar ==================== */
+
+export type EvolucaoAtividadeFisicaMes = {
+  mes: string;
+  mesLabel: string;
+  /** % de pacientes em cada faixa de intensidade (somam ~100) */
+  pctNaoPratica: number;
+  pctLeve: number;
+  pctModerada: number;
+  pctIntensa: number;
+  /** Média de dias/semana entre quem registrou (excluindo nulls) */
+  diasMedia: number | null;
+  n: number;
+};
+
+export function calcEvolucaoAtividadeFisica(
+  participantes: Participante[],
+  medicoes: Medicao[],
+  coorte?: string | null,
+): EvolucaoAtividadeFisicaMes[] {
+  const baseParts = coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes;
+  const ids = new Set(baseParts.map((p) => p.id));
+  const mesesSet = new Set<string>();
+  medicoes.forEach((m) => { if (ids.has(m.participante_id)) mesesSet.add(m.mes_referencia); });
+  const meses = Array.from(mesesSet).sort();
+
+  return meses.map((mes) => {
+    const ms = medicoes.filter(
+      (m) => m.mes_referencia === mes && ids.has(m.participante_id) && m.ativ_fisica_intensidade != null,
+    );
+    const n = ms.length;
+    const count = (k: AtivFisicaIntensidade) => ms.filter((m) => m.ativ_fisica_intensidade === k).length;
+    const pct = (k: AtivFisicaIntensidade) => (n ? (count(k) / n) * 100 : 0);
+    const dias = ms.map((m) => m.ativ_fisica_dias_semana).filter((d): d is number => d != null);
+    return {
+      mes,
+      mesLabel: formatMes(mes),
+      pctNaoPratica: pct("nao_pratica"),
+      pctLeve: pct("leve"),
+      pctModerada: pct("moderada"),
+      pctIntensa: pct("intensa"),
+      diasMedia: dias.length ? dias.reduce((a, b) => a + b, 0) / dias.length : null,
+      n,
+    };
+  });
+}
+
+export type EvolucaoNutricaoMes = {
+  mes: string;
+  mesLabel: string;
+  n: number;
+} & Record<NutriField, number>; // % de pacientes que marcaram cada item
+
+export function calcEvolucaoNutricao(
+  participantes: Participante[],
+  medicoes: Medicao[],
+  coorte?: string | null,
+): EvolucaoNutricaoMes[] {
+  const baseParts = coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes;
+  const ids = new Set(baseParts.map((p) => p.id));
+  const mesesSet = new Set<string>();
+  medicoes.forEach((m) => { if (ids.has(m.participante_id)) mesesSet.add(m.mes_referencia); });
+  const meses = Array.from(mesesSet).sort();
+
+  return meses.map((mes) => {
+    const ms = medicoes.filter((m) => m.mes_referencia === mes && ids.has(m.participante_id));
+    const n = ms.length;
+    const row: EvolucaoNutricaoMes = {
+      mes,
+      mesLabel: formatMes(mes),
+      n,
+      nutri_reduziu_acucar: 0,
+      nutri_reduziu_ultraprocessados: 0,
+      nutri_aumentou_proteina: 0,
+      nutri_aumentou_vegetais: 0,
+      nutri_controle_porcoes: 0,
+      nutri_reduziu_alcool: 0,
+    };
+    if (!n) return row;
+    NUTRI_FIELDS.forEach((f) => {
+      const c = ms.filter((m) => m[f.key] === true).length;
+      row[f.key] = (c / n) * 100;
+    });
+    return row;
+  });
+}
+
+export type EvolucaoAderenciaConsultasMes = {
+  mes: string;
+  mesLabel: string;
+  /** % de adesão por especialidade: realizadas / agendadas (apenas quando agendadas > 0) */
+  endocrino: number | null;
+  nutri: number | null;
+  psico: number | null;
+  edfisica: number | null;
+  /** Média global das 4 (ignora null) */
+  media: number | null;
+};
+
+export function calcEvolucaoAderenciaConsultas(
+  participantes: Participante[],
+  medicoes: Medicao[],
+  coorte?: string | null,
+): EvolucaoAderenciaConsultasMes[] {
+  const baseParts = coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes;
+  const ids = new Set(baseParts.map((p) => p.id));
+  const mesesSet = new Set<string>();
+  medicoes.forEach((m) => { if (ids.has(m.participante_id)) mesesSet.add(m.mes_referencia); });
+  const meses = Array.from(mesesSet).sort();
+
+  return meses.map((mes) => {
+    const ms = medicoes.filter((m) => m.mes_referencia === mes && ids.has(m.participante_id));
+    const pctEsp = (real: keyof Medicao, agen: keyof Medicao): number | null => {
+      let r = 0, a = 0;
+      ms.forEach((m) => {
+        const ag = (m[agen] as number | null) ?? 0;
+        const rl = (m[real] as number | null) ?? 0;
+        if (ag > 0) { a += ag; r += Math.min(rl, ag); }
+      });
+      return a > 0 ? (r / a) * 100 : null;
+    };
+    const endocrino = pctEsp("consultas_endocrino", "consultas_endocrino_agendadas");
+    const nutri = pctEsp("consultas_nutri", "consultas_nutri_agendadas");
+    const psico = pctEsp("consultas_psico", "consultas_psico_agendadas");
+    const edfisica = pctEsp("consultas_edfisica", "consultas_edfisica_agendadas");
+    const vals = [endocrino, nutri, psico, edfisica].filter((v): v is number => v != null);
+    const media = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+    return { mes, mesLabel: formatMes(mes), endocrino, nutri, psico, edfisica, media };
+  });
+}
+
+export function calcAderenciaConsultas(m: Medicao) {
+  const ag = (m.consultas_endocrino_agendadas ?? 0) + (m.consultas_nutri_agendadas ?? 0)
+    + (m.consultas_psico_agendadas ?? 0) + (m.consultas_edfisica_agendadas ?? 0);
+  const rl = Math.min((m.consultas_endocrino ?? 0), m.consultas_endocrino_agendadas ?? 0)
+    + Math.min((m.consultas_nutri ?? 0), m.consultas_nutri_agendadas ?? 0)
+    + Math.min((m.consultas_psico ?? 0), m.consultas_psico_agendadas ?? 0)
+    + Math.min((m.consultas_edfisica ?? 0), m.consultas_edfisica_agendadas ?? 0);
+  return { agendadas: ag, realizadas: rl, pct: ag > 0 ? (rl / ag) * 100 : null };
+}
+
