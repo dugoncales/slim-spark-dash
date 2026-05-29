@@ -1007,6 +1007,7 @@ function Dashboard() {
               </div>
               {comparacaoSection}
               {evolucaoSection}
+              {adesaoSection}
               {extrasSection}
             </>
           )}
