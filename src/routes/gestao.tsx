@@ -312,10 +312,10 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
     return v == null ? "" : String(v);
   }
 
-  function setVal(pid: string, field: keyof Medicao, v: string) {
+  function setVal(pid: string, field: keyof Medicao, v: string | boolean | null) {
     setEdits(e => {
-      const next: Partial<Medicao> = { ...e[pid], [field]: v === "" ? null : v };
-      if (field === "peso") {
+      const next: Partial<Medicao> = { ...e[pid], [field]: v === "" ? null : v } as Partial<Medicao>;
+      if (field === "peso" && typeof v === "string") {
         const part = participantes.find(p => p.id === pid);
         if (part?.altura && v !== "") {
           const imc = calcImc(parseFloat(v), part.altura);
@@ -325,6 +325,14 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
       return { ...e, [pid]: next };
     });
   }
+
+  function getBool(p: Participante, field: keyof Medicao): boolean {
+    const edit = edits[p.id];
+    if (edit && field in edit) return Boolean((edit as Record<string, unknown>)[field]);
+    const m = byPart.get(p.id);
+    return Boolean(m ? (m as Record<string, unknown>)[field] : false);
+  }
+
 
   async function criarMes() {
     if (!novoMes) return;
