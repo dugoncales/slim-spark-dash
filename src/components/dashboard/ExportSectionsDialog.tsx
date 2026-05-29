@@ -20,6 +20,7 @@ export const EXPORT_SECTIONS: ExportSection[] = [
   { id: "tabela", label: "Tabela de participantes" },
   { id: "comparacao", label: "Gráficos de barras (Peso e IMC)" },
   { id: "evolucao", label: "Evolução do grupo" },
+  { id: "adesao", label: "Adesão multidisciplinar" },
   { id: "insights", label: "Insights do período" },
   { id: "top", label: "Top evolução do mês" },
   { id: "resumo", label: "Resumo do grupo" },
