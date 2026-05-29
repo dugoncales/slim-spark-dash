@@ -461,6 +461,22 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
                   <td className="px-2 py-1"><Input className="h-8 w-14" type="number" value={getVal(p, "consultas_nutri")} onChange={e => setVal(p.id, "consultas_nutri", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-14" type="number" value={getVal(p, "consultas_psico")} onChange={e => setVal(p.id, "consultas_psico", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-14" type="number" value={getVal(p, "consultas_edfisica")} onChange={e => setVal(p.id, "consultas_edfisica", e.target.value)} /></td>
+                  <td className="px-2 py-1">
+                    <Select
+                      value={(getVal(p, "ativ_fisica_intensidade") || "__none") as string}
+                      onValueChange={(v) => setVal(p.id, "ativ_fisica_intensidade", v === "__none" ? null : v)}
+                    >
+                      <SelectTrigger className="h-8 w-36"><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">—</SelectItem>
+                        <SelectItem value="nao_pratica">Não pratica</SelectItem>
+                        <SelectItem value="leve">Leve</SelectItem>
+                        <SelectItem value="moderada">Moderada</SelectItem>
+                        <SelectItem value="intensa">Intensa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="px-2 py-1"><Input className="h-8 w-16" type="number" min={0} max={7} value={getVal(p, "ativ_fisica_dias_semana")} onChange={e => setVal(p.id, "ativ_fisica_dias_semana", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-48" value={getVal(p, "observacao")} onChange={e => setVal(p.id, "observacao", e.target.value)} /></td>
                 </tr>
                 );
