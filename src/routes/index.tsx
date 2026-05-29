@@ -20,7 +20,8 @@ import {
   Layers,
   ChevronRight,
   MousePointer2,
-} from "lucide-react";
+  HeartPulse,
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
