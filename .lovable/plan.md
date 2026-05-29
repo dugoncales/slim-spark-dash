@@ -1,90 +1,95 @@
-## Próximos passos no Supabase da TI (antes de migrar o código)
+## Objetivo
 
-Você já rodou o `migration_supabase_v2.sql` com sucesso. Agora faltam **3 passos no painel do Supabase** e depois **1 passo no Lovable** para trazer o código.
+Avaliar a evolução da adesão aos cuidados multidisciplinares por mês, com:
+- **Atividade física**: frequência (dias/semana) + intensidade (não pratica / leve / moderada / intensa)
+- **Nutrição**: checklist de mudanças específicas na dieta
+- **Consultas (psico, nutri, endócrino, ed. física)**: agendadas vs realizadas → % de adesão
 
----
+Exibido tanto agregado (Dashboard) quanto individual (`/paciente/$id`).
 
-### Passo 1 — Configurar Authentication no Supabase
+## 1. Banco de dados (migration)
 
-No painel que você está vendo (`Authentication`):
-
-**1.1 Sign In / Providers**
-- Clique em **Sign In / Providers** (menu esquerdo)
-- **Email**: já vem habilitado. Decida:
-  - `Confirm email` = **ON** (recomendado, usuário precisa confirmar email) — mas exige SMTP configurado
-  - `Confirm email` = **OFF** (mais simples para testar agora; pode ligar depois)
-- **Google** (opcional, se quiser login com Google):
-  - Habilite o provider Google
-  - Será necessário criar credenciais OAuth no Google Cloud Console e colar Client ID + Secret
-  - Se quiser pular agora, deixe só Email e ligue Google depois
-
-**1.2 URL Configuration**
-- Clique em **URL Configuration**
-- **Site URL**: coloque a URL do *novo* projeto Lovable (ex: `https://seu-novo-projeto.lovable.app`)
-- **Redirect URLs**: adicione:
-  - `https://seu-novo-projeto.lovable.app/**`
-  - `http://localhost:5173/**` (para desenvolvimento)
-
-> Se ainda não criou o novo projeto Lovable, faça isso primeiro (próximo passo) e volte aqui depois.
-
----
-
-### Passo 2 — Criar o novo projeto Lovable e conectar ao Supabase da TI
-
-1. Vá no Dashboard do Lovable → **New project**
-2. **NÃO ative o Lovable Cloud** (irreversível depois)
-3. Dentro do novo projeto: **Connectors** → **Supabase** → **Connect** → selecione o projeto Supabase da TI (`Obesity Care` / `dugoncales IRIS`)
-4. O Lovable injeta automaticamente: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-
----
-
-### Passo 3 — Trazer o código deste projeto para o novo
-
-No chat do **novo projeto Lovable** (vazio), digite:
-
-```
-@HEALTHBIT copie todo o código deste projeto, exceto a integração Supabase (mantenha a do Supabase da TI já conectado)
-```
-
-> Substitua `HEALTHBIT` pelo nome real deste projeto. Para mencionar, digite `@` e selecione na lista.
-
-A IA do novo projeto vai:
-- Copiar `src/components`, `src/routes`, `src/hooks`, `src/lib`, `src/styles.css`, etc.
-- **Não** copiar `src/integrations/supabase/` (será regenerado pelo connector da TI)
-- Copiar `package.json`, `vite.config.ts`, `tsconfig.json`, etc.
-
----
-
-### Passo 4 — Criar o primeiro admin
-
-Depois que o código subir e a app abrir:
-
-1. Acesse `/login` na nova URL e **faça signup** com seu email
-2. No painel Supabase da TI: **Authentication → Users** → copie o `User UID` do seu usuário recém-criado
-3. **SQL Editor** → rode:
+Adicionar colunas em `public.medicoes`:
 
 ```sql
-INSERT INTO public.user_roles (user_id, role)
-VALUES ('SEU-UUID-AQUI', 'admin')
-ON CONFLICT DO NOTHING;
+-- Atividade física
+ALTER TABLE public.medicoes
+  ADD COLUMN ativ_fisica_intensidade text
+    CHECK (ativ_fisica_intensidade IN ('nao_pratica','leve','moderada','intensa')),
+  ADD COLUMN ativ_fisica_dias_semana smallint
+    CHECK (ativ_fisica_dias_semana BETWEEN 0 AND 7);
+
+-- Nutrição (checklist booleano)
+ALTER TABLE public.medicoes
+  ADD COLUMN nutri_reduziu_acucar boolean DEFAULT false,
+  ADD COLUMN nutri_reduziu_ultraprocessados boolean DEFAULT false,
+  ADD COLUMN nutri_aumentou_proteina boolean DEFAULT false,
+  ADD COLUMN nutri_aumentou_vegetais boolean DEFAULT false,
+  ADD COLUMN nutri_controle_porcoes boolean DEFAULT false,
+  ADD COLUMN nutri_reduziu_alcool boolean DEFAULT false;
+
+-- Consultas agendadas (já existem as realizadas: consultas_*)
+ALTER TABLE public.medicoes
+  ADD COLUMN consultas_endocrino_agendadas smallint DEFAULT 0,
+  ADD COLUMN consultas_nutri_agendadas smallint DEFAULT 0,
+  ADD COLUMN consultas_psico_agendadas smallint DEFAULT 0,
+  ADD COLUMN consultas_edfisica_agendadas smallint DEFAULT 0;
 ```
 
-> Observação: o trigger `handle_new_user_role` está definido no código, mas o trigger em si **não existe** no banco da TI (o painel mostra "There are no triggers"). Isso significa que novos usuários **não** ganham role `gestor` automaticamente. Se quiser esse comportamento, eu te passo o SQL para criar o trigger em `auth.users` no próximo passo.
+Todos nullable/default — não quebra dados existentes. RLS já cobre via políticas atuais.
 
----
+## 2. Camada de dados (`src/lib/dashboard-data.ts`)
 
-### Passo 5 — Testar checklist
+Estender o tipo `Medicao` com os novos campos e adicionar helpers puros:
 
-- [ ] Login com email funciona
-- [ ] Aparece como admin no `/admin`
-- [ ] CRUD de participantes funciona
-- [ ] Adicionar medições funciona
-- [ ] Dashboard renderiza dados
+- `calcAderenciaConsultas(m)` → `{ pct, realizadas, agendadas }` por especialidade e total
+- `calcEvolucaoAtividadeFisica(participantes, medicoes, coorte?)` → série mensal com distribuição % por intensidade + média de dias/semana
+- `calcEvolucaoNutricao(participantes, medicoes, coorte?)` → série mensal com % de pacientes que marcaram cada mudança
+- `calcEvolucaoAderenciaConsultas(participantes, medicoes, coorte?)` → série mensal com % de adesão por especialidade
 
----
+## 3. Captura de dados (`/gestao` + `UploadDialog`)
 
-## Onde você está agora
+- Adicionar campos no formulário de medição mensal:
+  - Select de intensidade + input numérico de dias/semana
+  - 6 checkboxes de mudanças nutricionais (collapsible "Mudanças na dieta")
+  - 4 inputs "agendadas" pareados aos existentes "realizadas" (collapsible "Consultas")
+- `UploadDialog`: aceitar novas colunas opcionais no Excel; documentar nomes no modelo.
 
-Recomendo começar pelo **Passo 2** (criar o projeto novo) — assim você já tem a URL para usar no Passo 1.2 (URL Configuration). Depois volta para o Passo 1, faz o Passo 3 e termina com 4 e 5.
+## 4. Visualização — Dashboard (`/`)
 
-**Me avisa quando o novo projeto estiver criado e o Supabase da TI conectado nele** — eu fico disponível para ajudar com qualquer travamento, especialmente no `@mention` do Passo 3 e no SQL do trigger se você quiser auto-role para novos usuários.
+Nova seção `CollapsibleSection` "Adesão multidisciplinar" com 3 sub-blocos:
+
+1. **Atividade física** — gráfico de área empilhada 100% por mês (4 faixas de intensidade) + linha sobreposta com média de dias/semana
+2. **Nutrição** — gráfico de barras agrupadas por mês: 6 séries (% de pacientes em cada mudança)
+3. **Adesão a consultas** — gráfico de linhas: 4 séries (% adesão psico / nutri / endócrino / ed.física) + linha de média global
+
+Respeita o filtro de coorte já existente.
+
+## 5. Visualização — Ficha do paciente (`/paciente/$id`)
+
+Card "Adesão multidisciplinar" com:
+- Timeline mensal mostrando intensidade (badge colorido) + dias/semana
+- Checklist nutricional por mês (ícones marcados/desmarcados)
+- Tabela compacta consultas: realizadas / agendadas / % por especialidade
+
+## 6. Tipos Supabase
+
+`src/integrations/supabase/types.ts` é regenerado automaticamente após a migration.
+
+## Detalhes técnicos
+
+- Sem novas tabelas — tudo em `medicoes`, evita join extra e mantém o modelo "uma linha por mês por participante".
+- Cálculos puros em `dashboard-data.ts` (testáveis, sem efeitos).
+- Reuso de `MultiMonthBarChart`/`EvolucaoChart` quando possível; novos componentes em `src/components/dashboard/` apenas para gráfico empilhado de intensidade.
+- Nenhuma alteração em auth, RLS ou roles — escrita continua restrita a `gestor_saude` e `admin`.
+- Sem mudanças em rotas; apenas extensão de páginas existentes.
+
+## Arquivos afetados
+
+- `supabase/migrations/<nova>.sql`
+- `src/lib/dashboard-data.ts`
+- `src/routes/index.tsx` (Dashboard — nova seção)
+- `src/routes/paciente.$id.tsx`
+- `src/routes/gestao.tsx` (form de medição)
+- `src/components/dashboard/UploadDialog.tsx`
+- `src/components/dashboard/AderenciaMultidisciplinar*.tsx` (novos, 2–3 arquivos)

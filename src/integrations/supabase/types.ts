@@ -34,51 +34,87 @@ export type Database = {
       }
       medicoes: {
         Row: {
+          ativ_fisica_dias_semana: number | null
+          ativ_fisica_intensidade: string | null
           circunferencia: number | null
           consultas_edfisica: number | null
+          consultas_edfisica_agendadas: number | null
           consultas_endocrino: number | null
+          consultas_endocrino_agendadas: number | null
           consultas_nutri: number | null
+          consultas_nutri_agendadas: number | null
           consultas_psico: number | null
+          consultas_psico_agendadas: number | null
           created_at: string
           dose: string | null
           id: string
           imc: number | null
           medicamento: string | null
           mes_referencia: string
+          nutri_aumentou_proteina: boolean | null
+          nutri_aumentou_vegetais: boolean | null
+          nutri_controle_porcoes: boolean | null
+          nutri_reduziu_acucar: boolean | null
+          nutri_reduziu_alcool: boolean | null
+          nutri_reduziu_ultraprocessados: boolean | null
           observacao: string | null
           participante_id: string
           peso: number | null
           updated_at: string
         }
         Insert: {
+          ativ_fisica_dias_semana?: number | null
+          ativ_fisica_intensidade?: string | null
           circunferencia?: number | null
           consultas_edfisica?: number | null
+          consultas_edfisica_agendadas?: number | null
           consultas_endocrino?: number | null
+          consultas_endocrino_agendadas?: number | null
           consultas_nutri?: number | null
+          consultas_nutri_agendadas?: number | null
           consultas_psico?: number | null
+          consultas_psico_agendadas?: number | null
           created_at?: string
           dose?: string | null
           id?: string
           imc?: number | null
           medicamento?: string | null
           mes_referencia: string
+          nutri_aumentou_proteina?: boolean | null
+          nutri_aumentou_vegetais?: boolean | null
+          nutri_controle_porcoes?: boolean | null
+          nutri_reduziu_acucar?: boolean | null
+          nutri_reduziu_alcool?: boolean | null
+          nutri_reduziu_ultraprocessados?: boolean | null
           observacao?: string | null
           participante_id: string
           peso?: number | null
           updated_at?: string
         }
         Update: {
+          ativ_fisica_dias_semana?: number | null
+          ativ_fisica_intensidade?: string | null
           circunferencia?: number | null
           consultas_edfisica?: number | null
+          consultas_edfisica_agendadas?: number | null
           consultas_endocrino?: number | null
+          consultas_endocrino_agendadas?: number | null
           consultas_nutri?: number | null
+          consultas_nutri_agendadas?: number | null
           consultas_psico?: number | null
+          consultas_psico_agendadas?: number | null
           created_at?: string
           dose?: string | null
           id?: string
           imc?: number | null
           medicamento?: string | null
           mes_referencia?: string
+          nutri_aumentou_proteina?: boolean | null
+          nutri_aumentou_vegetais?: boolean | null
+          nutri_controle_porcoes?: boolean | null
+          nutri_reduziu_acucar?: boolean | null
+          nutri_reduziu_alcool?: boolean | null
+          nutri_reduziu_ultraprocessados?: boolean | null
           observacao?: string | null
           participante_id?: string
           peso?: number | null

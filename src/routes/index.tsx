@@ -20,7 +20,9 @@ import {
   Layers,
   ChevronRight,
   MousePointer2,
+  HeartPulse,
 } from "lucide-react";
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,12 +45,21 @@ import {
   calcEvolucaoGrupo,
   calcMarcos,
   serieParticipante,
+  calcEvolucaoAtividadeFisica,
+  calcEvolucaoNutricao,
+  calcEvolucaoAderenciaConsultas,
 } from "@/lib/dashboard-data";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { MultiMonthBarChart, type MultiMonthRow } from "@/components/dashboard/MultiMonthBarChart";
 import { UploadDialog } from "@/components/dashboard/UploadDialog";
 import { EvolucaoChart } from "@/components/dashboard/EvolucaoChart";
 import { CollapsibleSection } from "@/components/dashboard/CollapsibleSection";
+import {
+  AtividadeFisicaChart,
+  NutricaoChart,
+  AderenciaConsultasChart,
+} from "@/components/dashboard/AderenciaCharts";
+
 import {
   ExportMenu,
   H2C_OPTIONS,
@@ -275,6 +286,14 @@ function Dashboard() {
   })();
 
   const evolucao = calcEvolucaoGrupo(allParticipantes, allMedicoes, coorteAtiva);
+  const evolAtivFisica = calcEvolucaoAtividadeFisica(allParticipantes, allMedicoes, coorteAtiva);
+  const evolNutricao = calcEvolucaoNutricao(allParticipantes, allMedicoes, coorteAtiva);
+  const evolAderencia = calcEvolucaoAderenciaConsultas(allParticipantes, allMedicoes, coorteAtiva);
+  const temDadosAdesao =
+    evolAtivFisica.some((m) => m.n > 0) ||
+    evolNutricao.some((m) => m.n > 0) ||
+    evolAderencia.some((m) => m.media != null);
+
   const marcos = calcMarcos(allParticipantes, allMedicoes, coorteAtiva);
   const pct5 = marcos.total ? (marcos.atingiram5 / marcos.total) * 100 : 0;
   const pct10 = marcos.total ? (marcos.atingiram10 / marcos.total) * 100 : 0;
@@ -665,6 +684,41 @@ function Dashboard() {
       </CollapsibleSection>
     ) : null;
 
+  const adesaoSection = temDadosAdesao ? (
+    <CollapsibleSection
+      id="adesao"
+      title="Adesão multidisciplinar"
+      subtitle="Atividade física, nutrição e consultas ao longo dos meses"
+      icon={HeartPulse}
+      {...sectionExportProps}
+    >
+      <div className="space-y-8">
+        <div>
+          <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+            <Activity className="h-4 w-4 text-primary" />
+            Atividade física — distribuição por intensidade
+          </h4>
+          <AtividadeFisicaChart data={evolAtivFisica} />
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+            <HeartPulse className="h-4 w-4 text-primary" />
+            Nutrição — mudanças reportadas
+          </h4>
+          <NutricaoChart data={evolNutricao} />
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+            <LineChartIcon className="h-4 w-4 text-primary" />
+            Adesão às consultas (realizadas ÷ agendadas)
+          </h4>
+          <AderenciaConsultasChart data={evolAderencia} />
+        </div>
+      </div>
+    </CollapsibleSection>
+  ) : null;
+
+
   const circTable = (
     <Card className="overflow-hidden">
       <div className="overflow-x-auto">
@@ -813,6 +867,8 @@ function Dashboard() {
     tabela: tabelaSection,
     comparacao: comparacaoSection,
     evolucao: evolucaoSection,
+    adesao: adesaoSection,
+
     insights: insightsSection,
     top: topSection,
     resumo: resumoSection,
@@ -951,6 +1007,7 @@ function Dashboard() {
               </div>
               {comparacaoSection}
               {evolucaoSection}
+              {adesaoSection}
               {extrasSection}
             </>
           )}

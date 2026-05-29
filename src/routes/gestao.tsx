@@ -312,10 +312,10 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
     return v == null ? "" : String(v);
   }
 
-  function setVal(pid: string, field: keyof Medicao, v: string) {
+  function setVal(pid: string, field: keyof Medicao, v: string | boolean | null) {
     setEdits(e => {
-      const next: Partial<Medicao> = { ...e[pid], [field]: v === "" ? null : v };
-      if (field === "peso") {
+      const next: Partial<Medicao> = { ...e[pid], [field]: v === "" ? null : v } as Partial<Medicao>;
+      if (field === "peso" && typeof v === "string") {
         const part = participantes.find(p => p.id === pid);
         if (part?.altura && v !== "") {
           const imc = calcImc(parseFloat(v), part.altura);
@@ -325,6 +325,14 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
       return { ...e, [pid]: next };
     });
   }
+
+  function getBool(p: Participante, field: keyof Medicao): boolean {
+    const edit = edits[p.id];
+    if (edit && field in edit) return Boolean((edit as Record<string, unknown>)[field]);
+    const m = byPart.get(p.id);
+    return Boolean(m ? (m as Record<string, unknown>)[field] : false);
+  }
+
 
   async function criarMes() {
     if (!novoMes) return;
@@ -364,11 +372,23 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
     if (!mesSel) return;
     const toSave = Object.entries(edits);
     if (!toSave.length) { toast.info("Nada para salvar."); return; }
-    const numericFields = new Set(["peso", "imc", "circunferencia", "consultas_endocrino", "consultas_nutri", "consultas_psico", "consultas_edfisica"]);
+    const numericFields = new Set([
+      "peso", "imc", "circunferencia",
+      "consultas_endocrino", "consultas_nutri", "consultas_psico", "consultas_edfisica",
+      "consultas_endocrino_agendadas", "consultas_nutri_agendadas", "consultas_psico_agendadas", "consultas_edfisica_agendadas",
+      "ativ_fisica_dias_semana",
+    ]);
+    const booleanFields = new Set([
+      "nutri_reduziu_acucar", "nutri_reduziu_ultraprocessados", "nutri_aumentou_proteina",
+      "nutri_aumentou_vegetais", "nutri_controle_porcoes", "nutri_reduziu_alcool",
+    ]);
     for (const [pid, fields] of toSave) {
       const payload: Record<string, unknown> = { participante_id: pid, mes_referencia: mesSel };
       for (const [k, v] of Object.entries(fields)) {
-        payload[k] = v == null ? null : numericFields.has(k) ? Number(v) : v;
+        if (v == null) payload[k] = null;
+        else if (booleanFields.has(k)) payload[k] = Boolean(v);
+        else if (numericFields.has(k)) payload[k] = Number(v);
+        else payload[k] = v;
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await supabase.from("medicoes").upsert(payload as any, { onConflict: "participante_id,mes_referencia" });
@@ -411,10 +431,12 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
                 <th className="px-2 py-2">Circ.</th>
                 <th className="px-2 py-2">Medicam.</th>
                 <th className="px-2 py-2">Dose</th>
-                <th className="px-2 py-2">Endo</th>
-                <th className="px-2 py-2">Nutri</th>
-                <th className="px-2 py-2">Psico</th>
-                <th className="px-2 py-2">Ed.F</th>
+                <th className="px-2 py-2" title="Realizadas / Agendadas">Endo r/a</th>
+                <th className="px-2 py-2" title="Realizadas / Agendadas">Nutri r/a</th>
+                <th className="px-2 py-2" title="Realizadas / Agendadas">Psico r/a</th>
+                <th className="px-2 py-2" title="Realizadas / Agendadas">Ed.F r/a</th>
+                <th className="px-2 py-2">Ativ. física</th>
+                <th className="px-2 py-2">Dias/sem</th>
                 <th className="px-2 py-2">Obs</th>
               </tr>
             </thead>
