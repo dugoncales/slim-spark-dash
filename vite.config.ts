@@ -10,6 +10,5 @@ import { nitro } from "nitro/vite";
 // Deployment target: Vercel via Nitro. Nitro auto-detects the Vercel build environment
 // and emits the appropriate output (.vercel/output). Cloudflare plugin is disabled.
 export default defineConfig({
-  cloudflare: false,
   plugins: [nitro()],
 });
