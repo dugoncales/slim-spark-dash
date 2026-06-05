@@ -432,12 +432,17 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
                 <th className="px-2 py-2">Circ.</th>
                 <th className="px-2 py-2">Medicam.</th>
                 <th className="px-2 py-2">Dose</th>
-                <th className="px-2 py-2" title="Realizadas / Agendadas">Endo r/a</th>
-                <th className="px-2 py-2" title="Realizadas / Agendadas">Nutri r/a</th>
-                <th className="px-2 py-2" title="Realizadas / Agendadas">Psico r/a</th>
-                <th className="px-2 py-2" title="Realizadas / Agendadas">Ed.F r/a</th>
+                <th className="px-2 py-2" title="Realizadas / Agendadas">Endo<br/><span className="text-[10px]">real / agend</span></th>
+                <th className="px-2 py-2" title="Realizadas / Agendadas">Nutri<br/><span className="text-[10px]">real / agend</span></th>
+                <th className="px-2 py-2" title="Realizadas / Agendadas">Psico<br/><span className="text-[10px]">real / agend</span></th>
+                <th className="px-2 py-2" title="Realizadas / Agendadas">Ed.F<br/><span className="text-[10px]">real / agend</span></th>
                 <th className="px-2 py-2">Ativ. física</th>
                 <th className="px-2 py-2">Dias/sem</th>
+                {NUTRI_FIELDS.map(f => (
+                  <th key={f.key} className="px-2 py-2 text-center" title={f.label}>
+                    <span className="text-[10px] leading-tight block max-w-[70px]">{f.label}</span>
+                  </th>
+                ))}
                 <th className="px-2 py-2">Obs</th>
               </tr>
             </thead>
