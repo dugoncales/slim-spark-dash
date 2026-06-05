@@ -463,10 +463,34 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "circunferencia") || (isInicio && p.circunferencia_inicial != null ? String(p.circunferencia_inicial) : "")} onChange={e => setVal(p.id, "circunferencia", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-28" value={getVal(p, "medicamento")} onChange={e => setVal(p.id, "medicamento", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" value={getVal(p, "dose")} onChange={e => setVal(p.id, "dose", e.target.value)} /></td>
-                  <td className="px-2 py-1"><Input className="h-8 w-14" type="number" value={getVal(p, "consultas_endocrino")} onChange={e => setVal(p.id, "consultas_endocrino", e.target.value)} /></td>
-                  <td className="px-2 py-1"><Input className="h-8 w-14" type="number" value={getVal(p, "consultas_nutri")} onChange={e => setVal(p.id, "consultas_nutri", e.target.value)} /></td>
-                  <td className="px-2 py-1"><Input className="h-8 w-14" type="number" value={getVal(p, "consultas_psico")} onChange={e => setVal(p.id, "consultas_psico", e.target.value)} /></td>
-                  <td className="px-2 py-1"><Input className="h-8 w-14" type="number" value={getVal(p, "consultas_edfisica")} onChange={e => setVal(p.id, "consultas_edfisica", e.target.value)} /></td>
+                  <td className="px-2 py-1">
+                    <div className="flex items-center gap-1">
+                      <Input className="h-8 w-12" type="number" value={getVal(p, "consultas_endocrino")} onChange={e => setVal(p.id, "consultas_endocrino", e.target.value)} />
+                      <span className="text-muted-foreground">/</span>
+                      <Input className="h-8 w-12 bg-muted/30" type="number" value={getVal(p, "consultas_endocrino_agendadas")} onChange={e => setVal(p.id, "consultas_endocrino_agendadas", e.target.value)} />
+                    </div>
+                  </td>
+                  <td className="px-2 py-1">
+                    <div className="flex items-center gap-1">
+                      <Input className="h-8 w-12" type="number" value={getVal(p, "consultas_nutri")} onChange={e => setVal(p.id, "consultas_nutri", e.target.value)} />
+                      <span className="text-muted-foreground">/</span>
+                      <Input className="h-8 w-12 bg-muted/30" type="number" value={getVal(p, "consultas_nutri_agendadas")} onChange={e => setVal(p.id, "consultas_nutri_agendadas", e.target.value)} />
+                    </div>
+                  </td>
+                  <td className="px-2 py-1">
+                    <div className="flex items-center gap-1">
+                      <Input className="h-8 w-12" type="number" value={getVal(p, "consultas_psico")} onChange={e => setVal(p.id, "consultas_psico", e.target.value)} />
+                      <span className="text-muted-foreground">/</span>
+                      <Input className="h-8 w-12 bg-muted/30" type="number" value={getVal(p, "consultas_psico_agendadas")} onChange={e => setVal(p.id, "consultas_psico_agendadas", e.target.value)} />
+                    </div>
+                  </td>
+                  <td className="px-2 py-1">
+                    <div className="flex items-center gap-1">
+                      <Input className="h-8 w-12" type="number" value={getVal(p, "consultas_edfisica")} onChange={e => setVal(p.id, "consultas_edfisica", e.target.value)} />
+                      <span className="text-muted-foreground">/</span>
+                      <Input className="h-8 w-12 bg-muted/30" type="number" value={getVal(p, "consultas_edfisica_agendadas")} onChange={e => setVal(p.id, "consultas_edfisica_agendadas", e.target.value)} />
+                    </div>
+                  </td>
                   <td className="px-2 py-1">
                     <Select
                       value={(getVal(p, "ativ_fisica_intensidade") || "__none") as string}
@@ -483,6 +507,14 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
                     </Select>
                   </td>
                   <td className="px-2 py-1"><Input className="h-8 w-16" type="number" min={0} max={7} value={getVal(p, "ativ_fisica_dias_semana")} onChange={e => setVal(p.id, "ativ_fisica_dias_semana", e.target.value)} /></td>
+                  {NUTRI_FIELDS.map(f => (
+                    <td key={f.key} className="px-2 py-1 text-center">
+                      <Checkbox
+                        checked={getBool(p, f.key as keyof Medicao)}
+                        onCheckedChange={(v) => setVal(p.id, f.key as keyof Medicao, Boolean(v))}
+                      />
+                    </td>
+                  ))}
                   <td className="px-2 py-1"><Input className="h-8 w-48" value={getVal(p, "observacao")} onChange={e => setVal(p.id, "observacao", e.target.value)} /></td>
                 </tr>
                 );
