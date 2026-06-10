@@ -297,7 +297,7 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
 function Acompanhamento({ participantes, medicoes, refetch }: { participantes: Participante[]; medicoes: Medicao[]; refetch: () => void }) {
   const meses = useMemo(() => Array.from(new Set(medicoes.map(m => m.mes_referencia))).sort(), [medicoes]);
   const [mesSel, setMesSel] = useState<string>("");
-  const [novoMes, setNovoMes] = useState(new Date().toISOString().slice(0, 7));
+  const [novoMes, setNovoMes] = useState("2026-03");
   const [edits, setEdits] = useState<Record<string, Partial<Medicao>>>({});
 
   useEffect(() => { if (meses.length && !mesSel) setMesSel(meses[meses.length - 1]); }, [meses, mesSel]);
