@@ -279,8 +279,9 @@ function Dashboard() {
     rows.forEach((r, i) => {
       const label = mostrarNomes ? r.p.nome.split(" ")[0] : String(i + 1);
       const serie = serieParticipante(r.p, allMedicoes);
-      peso.push({ label, values: serie.map((s) => s.peso) });
-      imc.push({ label, values: serie.map((s) => s.imc) });
+      const doses = serie.map((s) => s.doseMg);
+      peso.push({ label, values: serie.map((s) => s.peso), doses });
+      imc.push({ label, values: serie.map((s) => s.imc), doses });
     });
     return { peso, imc };
   })();
