@@ -411,6 +411,7 @@ function SeriePeso({
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
           {idealRange && (
             <ReferenceArea
+              yAxisId="left"
               y1={idealRange.min}
               y2={idealRange.max}
               fill="#22c55e"
@@ -427,7 +428,25 @@ function SeriePeso({
             />
           )}
           <XAxis dataKey="mesLabel" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-          <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" domain={[yMin, yMax]} />
+          <YAxis
+            yAxisId="left"
+            tick={{ fontSize: 11 }}
+            stroke="var(--muted-foreground)"
+            domain={[yMin, yMax]}
+          />
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            tick={{ fontSize: 11 }}
+            stroke="#9333ea"
+            domain={[0, 15]}
+            label={{
+              value: "Dose (mg)",
+              angle: 90,
+              position: "insideRight",
+              style: { fontSize: 10, fill: "#9333ea" },
+            }}
+          />
           <Tooltip
             contentStyle={{
               background: "var(--card)",
@@ -435,17 +454,50 @@ function SeriePeso({
               borderRadius: 8,
               fontSize: 12,
             }}
-            formatter={(value: number | string) =>
-              typeof value === "number" ? value.toLocaleString("pt-BR") : value
-            }
+            formatter={(value: number | string, name: string) => {
+              if (typeof value !== "number") return value;
+              if (name === "Mounjaro (mg)") return [doseLabel(value), name];
+              return value.toLocaleString("pt-BR");
+            }}
           />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <Line
+            yAxisId="right"
+            type="stepAfter"
+            dataKey="doseMg"
+            stroke="#9333ea"
+            strokeWidth={2}
+            strokeDasharray="4 3"
+            dot={false}
+            name="Mounjaro (mg)"
+            connectNulls
+          />
+          <Line
+            yAxisId="left"
             type="monotone"
             dataKey="peso"
             stroke="#15803d"
             strokeWidth={2.5}
-            dot={{ r: 4, fill: "#15803d" }}
+            dot={(props: { cx?: number; cy?: number; payload?: SerieRow; index?: number }) => {
+              const { cx, cy, payload, index } = props;
+              if (cx == null || cy == null) {
+                return <g key={`dot-${index ?? Math.random()}`} />;
+              }
+              const dose = payload?.doseMg ?? null;
+              const fill = dose != null ? doseColor(dose) : "#15803d";
+              const stroke = dose != null ? "#15803d" : "#15803d";
+              return (
+                <circle
+                  key={`dot-${index ?? cx}-${cy}`}
+                  cx={cx}
+                  cy={cy}
+                  r={5}
+                  fill={fill}
+                  stroke={stroke}
+                  strokeWidth={1.5}
+                />
+              );
+            }}
             activeDot={{ r: 6 }}
             name="Peso (kg)"
             connectNulls
