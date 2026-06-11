@@ -211,7 +211,13 @@ export type MedicaoSerie = {
  */
 export function serieParticipante(p: Participante, medicoes: Medicao[]): MedicaoSerie[] {
   const ms = medicoes
-    .filter((m) => m.participante_id === p.id)
+    .filter(
+      (m) =>
+        m.participante_id === p.id &&
+        // Ignora medições anteriores ao mês de início do paciente
+        // (defesa contra dados órfãos que distorcem o gráfico de evolução).
+        (!p.mes_inicio || m.mes_referencia >= p.mes_inicio),
+    )
     .sort((a, b) => a.mes_referencia.localeCompare(b.mes_referencia));
 
   const out: MedicaoSerie[] = [];
