@@ -256,6 +256,10 @@ export type MedicaoSerie = {
   peso: number | null;
   imc: number | null;
   circunferencia: number | null;
+  /** Dose do Mounjaro em mg, quando registrada. */
+  doseMg: number | null;
+  /** Medicamento bruto (ex.: "Mounjaro"), para tooltips. */
+  medicamento: string | null;
 };
 
 /**
@@ -282,6 +286,8 @@ export function serieParticipante(p: Participante, medicoes: Medicao[]): Medicao
       peso: p.peso_inicial ?? null,
       imc: p.imc_inicial ?? calcImc(p.peso_inicial, p.altura),
       circunferencia: p.circunferencia_inicial ?? null,
+      doseMg: null,
+      medicamento: null,
     });
   }
   ms.forEach((m) => {
@@ -293,10 +299,13 @@ export function serieParticipante(p: Participante, medicoes: Medicao[]): Medicao
       peso: m.peso,
       imc: m.imc ?? calcImc(m.peso, p.altura),
       circunferencia: m.circunferencia,
+      doseMg: parseDoseMg(m.dose),
+      medicamento: m.medicamento,
     });
   });
   return out;
 }
+
 
 export function rotuloMesRelativo(idx: number): string {
   if (idx === 0) return "Inicial";
