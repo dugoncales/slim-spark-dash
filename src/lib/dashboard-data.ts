@@ -82,6 +82,60 @@ export type Medicao = {
   observacao: string | null;
 };
 
+/* ==================== Dose do Mounjaro ==================== */
+
+/**
+ * Normaliza a string de dose (ex.: "5,0mg", "7,5 mg", "10mg") em número (mg).
+ * Retorna null quando não conseguir extrair um número.
+ */
+export function parseDoseMg(dose: string | null | undefined): number | null {
+  if (!dose) return null;
+  const match = dose.replace(",", ".").match(/(\d+(?:\.\d+)?)/);
+  if (!match) return null;
+  const n = parseFloat(match[1]);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Doses padrão do Mounjaro, ordenadas. */
+export const DOSE_VALUES_MG = [2.5, 5, 7.5, 10, 12.5, 15] as const;
+
+/**
+ * Escala de cor por dose (claro = menor dose, escuro = maior dose).
+ * Tons de roxo para destacar a dose sem competir com o verde do peso/IMC.
+ */
+export const DOSE_COLORS: Record<number, string> = {
+  2.5: "#e9d5ff", // purple-200
+  5: "#c084fc",   // purple-400
+  7.5: "#9333ea", // purple-600
+  10: "#6b21a8",  // purple-800
+  12.5: "#4c1d95", // purple-900
+  15: "#2e1065",  // purple-950
+};
+
+/** Cor para uma dose arbitrária (cai no tom mais próximo). */
+export function doseColor(mg: number | null | undefined): string {
+  if (mg == null) return "#94a3b8"; // slate-400 (sem dose)
+  let best = DOSE_VALUES_MG[0] as number;
+  let bestDelta = Math.abs(mg - best);
+  for (const v of DOSE_VALUES_MG) {
+    const d = Math.abs(mg - v);
+    if (d < bestDelta) {
+      best = v;
+      bestDelta = d;
+    }
+  }
+  return DOSE_COLORS[best] ?? "#94a3b8";
+}
+
+/** Label amigável em pt-BR: 2.5 → "2,5 mg". */
+export function doseLabel(mg: number | null | undefined): string {
+  if (mg == null) return "—";
+  return `${mg.toString().replace(".", ",")} mg`;
+}
+
+
+
+
 
 export async function fetchAll() {
   const [p, m] = await Promise.all([
