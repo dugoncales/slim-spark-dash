@@ -39,6 +39,8 @@ import {
   calcPesoIdealRange,
   formatMes,
   nomeOuNumero,
+  doseColor,
+  doseLabel,
 } from "@/lib/dashboard-data";
 import { imcReferenceAreas, ImcBandsLegend } from "@/components/dashboard/ImcReferenceBands";
 
