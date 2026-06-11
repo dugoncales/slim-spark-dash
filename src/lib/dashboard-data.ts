@@ -82,6 +82,60 @@ export type Medicao = {
   observacao: string | null;
 };
 
+/* ==================== Dose do Mounjaro ==================== */
+
+/**
+ * Normaliza a string de dose (ex.: "5,0mg", "7,5 mg", "10mg") em número (mg).
+ * Retorna null quando não conseguir extrair um número.
+ */
+export function parseDoseMg(dose: string | null | undefined): number | null {
+  if (!dose) return null;
+  const match = dose.replace(",", ".").match(/(\d+(?:\.\d+)?)/);
+  if (!match) return null;
+  const n = parseFloat(match[1]);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Doses padrão do Mounjaro, ordenadas. */
+export const DOSE_VALUES_MG = [2.5, 5, 7.5, 10, 12.5, 15] as const;
+
+/**
+ * Escala de cor por dose (claro = menor dose, escuro = maior dose).
+ * Tons de roxo para destacar a dose sem competir com o verde do peso/IMC.
+ */
+export const DOSE_COLORS: Record<number, string> = {
+  2.5: "#e9d5ff", // purple-200
+  5: "#c084fc",   // purple-400
+  7.5: "#9333ea", // purple-600
+  10: "#6b21a8",  // purple-800
+  12.5: "#4c1d95", // purple-900
+  15: "#2e1065",  // purple-950
+};
+
+/** Cor para uma dose arbitrária (cai no tom mais próximo). */
+export function doseColor(mg: number | null | undefined): string {
+  if (mg == null) return "#94a3b8"; // slate-400 (sem dose)
+  let best = DOSE_VALUES_MG[0] as number;
+  let bestDelta = Math.abs(mg - best);
+  for (const v of DOSE_VALUES_MG) {
+    const d = Math.abs(mg - v);
+    if (d < bestDelta) {
+      best = v;
+      bestDelta = d;
+    }
+  }
+  return DOSE_COLORS[best] ?? "#94a3b8";
+}
+
+/** Label amigável em pt-BR: 2.5 → "2,5 mg". */
+export function doseLabel(mg: number | null | undefined): string {
+  if (mg == null) return "—";
+  return `${mg.toString().replace(".", ",")} mg`;
+}
+
+
+
+
 
 export async function fetchAll() {
   const [p, m] = await Promise.all([
@@ -202,6 +256,10 @@ export type MedicaoSerie = {
   peso: number | null;
   imc: number | null;
   circunferencia: number | null;
+  /** Dose do Mounjaro em mg, quando registrada. */
+  doseMg: number | null;
+  /** Medicamento bruto (ex.: "Mounjaro"), para tooltips. */
+  medicamento: string | null;
 };
 
 /**
@@ -211,7 +269,13 @@ export type MedicaoSerie = {
  */
 export function serieParticipante(p: Participante, medicoes: Medicao[]): MedicaoSerie[] {
   const ms = medicoes
-    .filter((m) => m.participante_id === p.id)
+    .filter(
+      (m) =>
+        m.participante_id === p.id &&
+        // Ignora medições anteriores ao mês de início do paciente
+        // (defesa contra dados órfãos que distorcem o gráfico de evolução).
+        (!p.mes_inicio || m.mes_referencia >= p.mes_inicio),
+    )
     .sort((a, b) => a.mes_referencia.localeCompare(b.mes_referencia));
 
   const out: MedicaoSerie[] = [];
@@ -222,6 +286,8 @@ export function serieParticipante(p: Participante, medicoes: Medicao[]): Medicao
       peso: p.peso_inicial ?? null,
       imc: p.imc_inicial ?? calcImc(p.peso_inicial, p.altura),
       circunferencia: p.circunferencia_inicial ?? null,
+      doseMg: null,
+      medicamento: null,
     });
   }
   ms.forEach((m) => {
@@ -233,10 +299,13 @@ export function serieParticipante(p: Participante, medicoes: Medicao[]): Medicao
       peso: m.peso,
       imc: m.imc ?? calcImc(m.peso, p.altura),
       circunferencia: m.circunferencia,
+      doseMg: parseDoseMg(m.dose),
+      medicamento: m.medicamento,
     });
   });
   return out;
 }
+
 
 export function rotuloMesRelativo(idx: number): string {
   if (idx === 0) return "Inicial";
