@@ -430,7 +430,10 @@ function Dashboard() {
                 </span>
               </p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                {fmt(pct10, 0)}% do grupo · impacto metabólico
+                {fmt(pct10, 0)}% do grupo · meta clínica em ~6 meses
+                {marcos.mesesMedianos10 != null
+                  ? ` · mediana observada: ${marcos.mesesMedianos10}º mês`
+                  : ""}
               </p>
             </div>
           </Card>
