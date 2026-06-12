@@ -260,6 +260,10 @@ export type MarcosResumo = {
   atingiram10: number;
   total: number;
   perdaMediaAcumPct: number;
+  /** Mediana do nº de meses (1º, 2º, …) em que pacientes cruzaram −5% pela 1ª vez. */
+  mesesMedianos5: number | null;
+  /** Mediana do nº de meses em que pacientes cruzaram −10% pela 1ª vez. */
+  mesesMedianos10: number | null;
 };
 
 /**
