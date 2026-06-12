@@ -1,36 +1,27 @@
-## Parte 1 — Excluir dados de março/2025 (também corrige o bug do gráfico)
+## Objetivo
+Deixar explícito, nos cards de "Marcos clínicos" do dashboard (`/`), que o marco de **≥ 5% de perda** é a referência clínica esperada **em ~3 meses** e o de **≥ 10%** **em ~6 meses**.
 
-Há 11 medições em `medicoes` com `mes_referencia = 2025-03-01`. Entre elas está a do participante 3 (David, `mes_inicio = 2026-03-01`), com peso 110,9 kg. Como o gráfico ordena por `mes_referencia`, esse registro órfão entra antes do `mes_inicio` e vira "1º Mês" no tooltip — daí o peso 110,9 aparecer "duas vezes" (no falso 1º e no real 2º mês).
+## Mudanças
 
-Ações:
-- Migration `DELETE FROM medicoes WHERE mes_referencia = '2025-03-01'` (11 linhas, nenhum participante afetado).
-- Endurecer `serieParticipante` em `src/lib/dashboard-data.ts`: ignorar medições com `mes_referencia < mes_inicio` (defesa em profundidade caso alguém volte a importar dados anteriores ao início do paciente).
-- Após o delete, validar com query e recarregar o dashboard para confirmar que o tooltip volta a mostrar Inicial + 1º…4º Mês corretamente.
+### 1. `src/lib/dashboard-data.ts` — `calcMarcos`
+Estender `MarcosResumo` com dois campos adicionais (mês relativo desde `mes_inicio` em que cada paciente cruzou o limiar pela primeira vez, agregado como mediana):
 
-## Parte 2 — Visualização da dose do Mounjaro nos gráficos
+- `mesesMedianos5: number | null`
+- `mesesMedianos10: number | null`
 
-Defaults assumidos (peça ajuste se quiser outra forma).
+Para cada paciente da coorte, percorrer as medições ordenadas e registrar o índice (1º, 2º, … mês) da primeira em que `perdaPct ≤ -5` / `≤ -10`. A mediana dessas posições alimenta os campos novos. Sem mudança de schema.
 
-### 2.1 Parser de dose (cliente, sem alterar banco)
-Em `src/lib/dashboard-data.ts`:
-- `parseDoseMg(dose: string | null): number | null` — normaliza `"2,5 mg"`, `"5,0mg"`, `"7,5mg"`, `"10mg"` → `2.5 | 5 | 7.5 | 10`.
-- `DOSE_COLORS` (escala clara → escura para 2,5 / 5 / 7,5 / 10 mg).
-- `doseLabel(mg)` → `"2,5 mg"`.
+Bônus: remover a linha duplicada de `return` ao final de `calcMarcos` (linhas 372–373).
 
-### 2.2 Página do paciente (`/paciente/$id`)
-- Adicionar segundo eixo Y (0–15 mg) na curva de peso, com linha em degrau (step) da dose.
-- Pontos da curva de peso coloridos pela dose vigente.
-- Tooltip mostra peso, IMC e dose do mês.
+### 2. `src/routes/index.tsx` — cards de marcos (linhas 390–450)
+Adicionar a referência de tempo no subtítulo de cada card:
 
-### 2.3 Dashboard — `MultiMonthBarChart`
-- Badge pequeno acima de cada barra com a dose em mg (ex.: "5"), cor segue `DOSE_COLORS`.
-- Legenda de doses abaixo do gráfico.
+- Card "≥ 5%": acrescentar **"meta clínica em ~3 meses"** e, quando `mesesMedianos5` existir, anexar **"· mediana observada: Xº mês"**.
+- Card "≥ 10%": acrescentar **"meta clínica em ~6 meses"** e, quando `mesesMedianos10` existir, anexar **"· mediana observada: Xº mês"**.
+- Card "Perda média acumulada": manter como está.
 
-### 2.4 Novo card "Resposta por dose" no dashboard
-- ScatterChart (recharts): X = dose (2,5 / 5 / 7,5 / 10 mg), Y = Δ peso (kg) do mês com aquela dose vs. mês anterior do mesmo paciente.
-- KPI ao lado: média de Δpeso por dose.
+Sem mudar layout, ícones ou cores — apenas texto auxiliar.
 
-## Notas técnicas
-- Sem mudança de schema; apenas migration de DELETE.
-- Strings de dose preservadas no banco; tudo via parser no cliente.
-- Reaproveita `recharts` já instalado.
+## Fora do escopo
+- Página `/paciente/$id`, gráficos, exportação.
+- Banco de dados / migrations.
