@@ -489,9 +489,16 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
                       const medNome = getVal(p, "medicamento") as string;
                       const med = MEDICAMENTOS.find((m) => m.nome === medNome);
                       const doseAtual = (getVal(p, "dose") as string) || "";
+                      // Normaliza doses legadas (ex.: "10mg", "5,0mg") para o valor padrão equivalente.
+                      let doseSel = doseAtual;
+                      if (med && doseAtual) {
+                        const num = parseFloat(doseAtual.replace(",", ".").match(/\d+(?:\.\d+)?/)?.[0] ?? "");
+                        const match = med.doses.find((d) => Math.abs(d - num) < 0.001);
+                        if (match != null) doseSel = formatDoseValue(match);
+                      }
                       return (
                         <Select
-                          value={doseAtual || "__none__"}
+                          value={doseSel || "__none__"}
                           onValueChange={(v) => setVal(p.id, "dose", v === "__none__" ? "" : v)}
                           disabled={!med}
                         >
