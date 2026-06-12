@@ -2,13 +2,8 @@
 // or the app will break with duplicate plugins:
 //   - tanstackStart, viteReact, tailwindcss, tsConfigPaths,
 //     componentTagger (dev-only), VITE_* env injection, @ path alias, React/TanStack dedupe,
-//     error logger plugins, and sandbox detection (port/host/strictPort).
-// You can pass additional config via defineConfig({ vite: { ... } }) if needed.
+//     error logger plugins, sandbox detection (port/host/strictPort),
+//     AND the Cloudflare Workers plugin used by Lovable publishing.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
-import { nitro } from "nitro/vite";
 
-// Deployment target: Vercel via Nitro. Nitro auto-detects the Vercel build environment
-// and emits the appropriate output (.vercel/output). Cloudflare plugin is disabled.
-export default defineConfig({
-  plugins: [nitro()],
-});
+export default defineConfig({});
