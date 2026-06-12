@@ -652,7 +652,6 @@ function Dashboard() {
           metric="peso"
           unit="Peso (kg)"
           height={420}
-          showDoses
           onBarClick={(idx) => {
             const p = rows[idx]?.p;
             if (p) navigate({ to: "/paciente/$id", params: { id: p.id } });
@@ -664,7 +663,7 @@ function Dashboard() {
           metric="imc"
           unit="IMC (kg/m²)"
           height={420}
-          showDoses
+          
           onBarClick={(idx) => {
             const p = rows[idx]?.p;
             if (p) navigate({ to: "/paciente/$id", params: { id: p.id } });
