@@ -410,7 +410,10 @@ function Dashboard() {
                 </span>
               </p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                {fmt(pct5, 0)}% do grupo · marco clínico de eficácia
+                {fmt(pct5, 0)}% do grupo · meta clínica em ~3 meses
+                {marcos.mesesMedianos5 != null
+                  ? ` · mediana observada: ${marcos.mesesMedianos5}º mês`
+                  : ""}
               </p>
             </div>
           </Card>
@@ -427,7 +430,10 @@ function Dashboard() {
                 </span>
               </p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                {fmt(pct10, 0)}% do grupo · impacto metabólico
+                {fmt(pct10, 0)}% do grupo · meta clínica em ~6 meses
+                {marcos.mesesMedianos10 != null
+                  ? ` · mediana observada: ${marcos.mesesMedianos10}º mês`
+                  : ""}
               </p>
             </div>
           </Card>

@@ -260,6 +260,10 @@ export type MarcosResumo = {
   atingiram10: number;
   total: number;
   perdaMediaAcumPct: number;
+  /** Mediana do nº de meses (1º, 2º, …) em que pacientes cruzaram −5% pela 1ª vez. */
+  mesesMedianos5: number | null;
+  /** Mediana do nº de meses em que pacientes cruzaram −10% pela 1ª vez. */
+  mesesMedianos10: number | null;
 };
 
 /**
@@ -352,6 +356,8 @@ export function calcMarcos(
     atingiram10 = 0,
     somaPct = 0,
     total = 0;
+  const tempos5: number[] = [];
+  const tempos10: number[] = [];
   baseParts.forEach((p) => {
     const ms = medicoes
       .filter(
@@ -368,9 +374,36 @@ export function calcMarcos(
     somaPct += perdaPct;
     if (perdaPct <= -5) atingiram5 += 1;
     if (perdaPct <= -10) atingiram10 += 1;
+    // Tempo (em nº de meses pós-início) da 1ª vez que cada limiar foi cruzado.
+    for (let i = 0; i < ms.length; i++) {
+      const pct = ((ms[i].peso! - p.peso_inicial) / p.peso_inicial) * 100;
+      if (pct <= -5 && !tempos5.includes(-1)) {
+        tempos5.push(i + 1);
+        break;
+      }
+    }
+    for (let i = 0; i < ms.length; i++) {
+      const pct = ((ms[i].peso! - p.peso_inicial) / p.peso_inicial) * 100;
+      if (pct <= -10) {
+        tempos10.push(i + 1);
+        break;
+      }
+    }
   });
-  return { atingiram5, atingiram10, total, perdaMediaAcumPct: total ? somaPct / total : 0 };
-  return { atingiram5, atingiram10, total, perdaMediaAcumPct: total ? somaPct / total : 0 };
+  const mediana = (arr: number[]): number | null => {
+    if (!arr.length) return null;
+    const s = [...arr].sort((a, b) => a - b);
+    const mid = Math.floor(s.length / 2);
+    return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+  };
+  return {
+    atingiram5,
+    atingiram10,
+    total,
+    perdaMediaAcumPct: total ? somaPct / total : 0,
+    mesesMedianos5: mediana(tempos5),
+    mesesMedianos10: mediana(tempos10),
+  };
 }
 
 /* ==================== Adesão multidisciplinar ==================== */
