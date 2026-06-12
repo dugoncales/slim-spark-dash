@@ -306,14 +306,17 @@ export function serieParticipante(p: Participante, medicoes: Medicao[]): Medicao
 
   const out: MedicaoSerie[] = [];
   if (p.mes_inicio) {
+    // Se houver uma medição registrada já no mês de início, traz a dose/medicamento
+    // dela para o ponto "Inicial" do gráfico (caso contrário fica null).
+    const mInicio = ms.find((m) => m.mes_referencia === p.mes_inicio);
     out.push({
       mes: p.mes_inicio,
       mesLabel: formatMes(p.mes_inicio),
       peso: p.peso_inicial ?? null,
       imc: p.imc_inicial ?? calcImc(p.peso_inicial, p.altura),
       circunferencia: p.circunferencia_inicial ?? null,
-      doseMg: null,
-      medicamento: null,
+      doseMg: parseDoseMg(mInicio?.dose),
+      medicamento: mInicio?.medicamento ?? null,
     });
   }
   ms.forEach((m) => {
