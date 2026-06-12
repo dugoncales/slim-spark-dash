@@ -461,8 +461,52 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "peso")} onChange={e => setVal(p.id, "peso", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20 bg-muted/40" type="number" step="0.01" value={getVal(p, "imc")} onChange={e => setVal(p.id, "imc", e.target.value)} title="Recalculado ao alterar peso" /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "circunferencia") || (isInicio && p.circunferencia_inicial != null ? String(p.circunferencia_inicial) : "")} onChange={e => setVal(p.id, "circunferencia", e.target.value)} /></td>
-                  <td className="px-2 py-1"><Input className="h-8 w-28" value={getVal(p, "medicamento")} onChange={e => setVal(p.id, "medicamento", e.target.value)} /></td>
-                  <td className="px-2 py-1"><Input className="h-8 w-20" value={getVal(p, "dose")} onChange={e => setVal(p.id, "dose", e.target.value)} /></td>
+                  <td className="px-2 py-1">
+                    <Select
+                      value={(getVal(p, "medicamento") as string) || "__none__"}
+                      onValueChange={(v) => {
+                        const next = v === "__none__" ? "" : v;
+                        setVal(p.id, "medicamento", next);
+                        // Limpa a dose se o medicamento mudou (doses são específicas da caneta).
+                        const doseAtual = getVal(p, "dose") as string;
+                        const med = MEDICAMENTOS.find((m) => m.nome === next);
+                        if (!med || !med.doses.some((d) => formatDoseValue(d) === doseAtual)) {
+                          setVal(p.id, "dose", "");
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-8 w-32"><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">—</SelectItem>
+                        {MEDICAMENTOS.map((m) => (
+                          <SelectItem key={m.nome} value={m.nome}>{m.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="px-2 py-1">
+                    {(() => {
+                      const medNome = getVal(p, "medicamento") as string;
+                      const med = MEDICAMENTOS.find((m) => m.nome === medNome);
+                      const doseAtual = (getVal(p, "dose") as string) || "";
+                      return (
+                        <Select
+                          value={doseAtual || "__none__"}
+                          onValueChange={(v) => setVal(p.id, "dose", v === "__none__" ? "" : v)}
+                          disabled={!med}
+                        >
+                          <SelectTrigger className="h-8 w-24"><SelectValue placeholder="—" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">—</SelectItem>
+                            {med?.doses.map((d) => {
+                              const val = formatDoseValue(d);
+                              return <SelectItem key={val} value={val}>{val}</SelectItem>;
+                            })}
+                          </SelectContent>
+                        </Select>
+                      );
+                    })()}
+                  </td>
                   <td className="px-2 py-1">
                     <div className="flex items-center gap-1">
                       <Input className="h-8 w-12" type="number" value={getVal(p, "consultas_endocrino")} onChange={e => setVal(p.id, "consultas_endocrino", e.target.value)} />
