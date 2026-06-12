@@ -133,6 +133,32 @@ export function doseLabel(mg: number | null | undefined): string {
   return `${mg.toString().replace(".", ",")} mg`;
 }
 
+/* ==================== Catálogo de medicamentos (canetas GLP-1/GIP) ==================== */
+
+export type Medicamento = {
+  /** Nome comercial padronizado (gravado em medicoes.medicamento). */
+  nome: string;
+  /** Princípio ativo, só para tooltip/legenda. */
+  principio: string;
+  /** Doses padrão em mg, na ordem de escalonamento. */
+  doses: number[];
+};
+
+export const MEDICAMENTOS: Medicamento[] = [
+  { nome: "Mounjaro", principio: "tirzepatida", doses: [2.5, 5, 7.5, 10, 12.5, 15] },
+  { nome: "Ozempic", principio: "semaglutida", doses: [0.25, 0.5, 1.0, 2.0] },
+  { nome: "Wegovy", principio: "semaglutida", doses: [0.25, 0.5, 1.0, 1.7, 2.4] },
+  { nome: "Saxenda", principio: "liraglutida", doses: [0.6, 1.2, 1.8, 2.4, 3.0] },
+  { nome: "Victoza", principio: "liraglutida", doses: [0.6, 1.2, 1.8] },
+  { nome: "Trulicity", principio: "dulaglutida", doses: [0.75, 1.5, 3.0, 4.5] },
+  { nome: "Rybelsus", principio: "semaglutida oral", doses: [3, 7, 14] },
+];
+
+/** String padronizada de dose (ex.: 2.5 → "2,5 mg"). Usada também como valor armazenado. */
+export function formatDoseValue(mg: number): string {
+  return `${mg.toString().replace(".", ",")} mg`;
+}
+
 
 
 
@@ -280,14 +306,17 @@ export function serieParticipante(p: Participante, medicoes: Medicao[]): Medicao
 
   const out: MedicaoSerie[] = [];
   if (p.mes_inicio) {
+    // Se houver uma medição registrada já no mês de início, traz a dose/medicamento
+    // dela para o ponto "Inicial" do gráfico (caso contrário fica null).
+    const mInicio = ms.find((m) => m.mes_referencia === p.mes_inicio);
     out.push({
       mes: p.mes_inicio,
       mesLabel: formatMes(p.mes_inicio),
       peso: p.peso_inicial ?? null,
       imc: p.imc_inicial ?? calcImc(p.peso_inicial, p.altura),
       circunferencia: p.circunferencia_inicial ?? null,
-      doseMg: null,
-      medicamento: null,
+      doseMg: parseDoseMg(mInicio?.dose),
+      medicamento: mInicio?.medicamento ?? null,
     });
   }
   ms.forEach((m) => {
