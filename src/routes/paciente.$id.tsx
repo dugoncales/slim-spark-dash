@@ -290,23 +290,35 @@ function PacientePage() {
                     </td>
                   </tr>
                 ) : (
-                  medicoesOrdenadas.map((m) => (
-                    <tr key={m.id} className="border-t hover:bg-muted/30">
-                      <td className="px-4 py-2.5 font-medium">{formatMes(m.mes_referencia)}</td>
-                      <td className="px-4 py-2.5">{fmt(m.peso)}</td>
-                      <td className="px-4 py-2.5">{fmt(m.imc, 2)}</td>
-                      <td className="px-4 py-2.5">{fmt(m.circunferencia)}</td>
-                      <td className="px-4 py-2.5">{m.medicamento ?? "—"}</td>
-                      <td className="px-4 py-2.5">{m.dose ?? "—"}</td>
-                      <td className="px-4 py-2.5 text-center">{m.consultas_endocrino ?? 0}</td>
-                      <td className="px-4 py-2.5 text-center">{m.consultas_nutri ?? 0}</td>
-                      <td className="px-4 py-2.5 text-center">{m.consultas_psico ?? 0}</td>
-                      <td className="px-4 py-2.5 text-center">{m.consultas_edfisica ?? 0}</td>
-                      <td className="px-4 py-2.5 text-muted-foreground max-w-[280px] truncate">
-                        {m.observacao ?? ""}
-                      </td>
-                    </tr>
-                  ))
+                  (() => {
+                    let accEndo = 0;
+                    let accNutri = 0;
+                    let accPsico = 0;
+                    let accEdf = 0;
+                    return medicoesOrdenadas.map((m) => {
+                      accEndo += m.consultas_endocrino ?? 0;
+                      accNutri += m.consultas_nutri ?? 0;
+                      accPsico += m.consultas_psico ?? 0;
+                      accEdf += m.consultas_edfisica ?? 0;
+                      return (
+                        <tr key={m.id} className="border-t hover:bg-muted/30">
+                          <td className="px-4 py-2.5 font-medium">{formatMes(m.mes_referencia)}</td>
+                          <td className="px-4 py-2.5">{fmt(m.peso)}</td>
+                          <td className="px-4 py-2.5">{fmt(m.imc, 2)}</td>
+                          <td className="px-4 py-2.5">{fmt(m.circunferencia)}</td>
+                          <td className="px-4 py-2.5">{m.medicamento ?? "—"}</td>
+                          <td className="px-4 py-2.5">{m.dose ?? "—"}</td>
+                          <td className="px-4 py-2.5 text-center">{accEndo}</td>
+                          <td className="px-4 py-2.5 text-center">{accNutri}</td>
+                          <td className="px-4 py-2.5 text-center">{accPsico}</td>
+                          <td className="px-4 py-2.5 text-center">{accEdf}</td>
+                          <td className="px-4 py-2.5 text-muted-foreground max-w-[280px] truncate">
+                            {m.observacao ?? ""}
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()
                 )}
               </tbody>
             </table>
