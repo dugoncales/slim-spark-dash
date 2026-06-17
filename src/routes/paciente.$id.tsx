@@ -245,11 +245,16 @@ function PacientePage() {
           )}
         </Card>
 
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <ConsultaCard icon={Stethoscope} label="Endocrinologia" value={totals.endo} />
           <ConsultaCard icon={Apple} label="Nutrição" value={totals.nutri} />
           <ConsultaCard icon={Brain} label="Psicologia" value={totals.psico} />
           <ConsultaCard icon={Dumbbell} label="Educação Física" value={totals.edf} />
+          <ConsultaCard
+            icon={CalendarDays}
+            label="Total de consultas"
+            value={totals.endo + totals.nutri + totals.psico + totals.edf}
+          />
         </section>
 
         <Card className="overflow-hidden">
