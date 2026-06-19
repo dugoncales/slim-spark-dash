@@ -49,6 +49,7 @@ import {
   calcEvolucaoAtividadeFisica,
   calcEvolucaoNutricao,
   calcEvolucaoAderenciaConsultas,
+  calcRiscoMedioGrupo,
   aplicarFiltroGrupos,
   SEM_GRUPO,
 } from "@/lib/dashboard-data";
