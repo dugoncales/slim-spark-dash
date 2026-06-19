@@ -88,7 +88,7 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
   }
 
   const defaultMes = (mesInicio ? mesInicio.slice(0, 7) : new Date().toISOString().slice(0, 7));
-  const [novoPart, setNovoPart] = useState({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: "", grupo_id: "" });
+  const [novoPart, setNovoPart] = useState({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: "", grupo_id: "", sexo: "" });
   useEffect(() => { if (!novoPart.mes_inicio) setNovoPart(s => ({ ...s, mes_inicio: defaultMes })); }, [defaultMes]);
   const [filtroMes, setFiltroMes] = useState<string>("__todos");
   const [edits, setEdits] = useState<Record<string, Partial<Participante>>>({});
@@ -149,10 +149,11 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
       circunferencia_inicial: novoPart.circunferencia_inicial ? parseFloat(novoPart.circunferencia_inicial) : null,
       mes_inicio: `${novoPart.mes_inicio}-01`,
       grupo_id: novoPart.grupo_id || null,
+      sexo: (novoPart.sexo as "masculino" | "feminino" | "") || null,
     });
     if (error) { toast.error(error.message); return; }
     toast.success("Participante adicionado.");
-    setNovoPart({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: defaultMes, grupo_id: "" });
+    setNovoPart({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: defaultMes, grupo_id: "", sexo: "" });
     refetch();
   }
 
@@ -230,6 +231,17 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label>Sexo</Label>
+            <Select value={novoPart.sexo || "__none"} onValueChange={(v) => setNovoPart({ ...novoPart, sexo: v === "__none" ? "" : v })}>
+              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">— Não informado —</SelectItem>
+                <SelectItem value="masculino">Masculino</SelectItem>
+                <SelectItem value="feminino">Feminino</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Button onClick={addParticipante} className="md:col-span-8 md:w-fit"><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
         </div>
       </Card>
@@ -267,6 +279,7 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
                 <th className="px-2 py-2">Peso inicial</th>
                 <th className="px-2 py-2">IMC inicial</th>
                 <th className="px-2 py-2">Circ. inicial</th>
+                <th className="px-2 py-2">Sexo</th>
                 <th className="px-2 py-2">Ativo</th>
                 <th></th>
               </tr>
@@ -301,6 +314,19 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
                   <td className="px-2 py-1"><Input className="h-8 w-20 bg-muted" readOnly value={imcLinha(p)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "circunferencia_inicial")} onChange={e => setVal(p.id, "circunferencia_inicial", e.target.value)} /></td>
                   <td className="px-2 py-1">
+                    <Select
+                      value={((edits[p.id]?.sexo as string | null | undefined) ?? p.sexo) || "__none"}
+                      onValueChange={(v) => setVal(p.id, "sexo", v === "__none" ? "" : v)}
+                    >
+                      <SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">—</SelectItem>
+                        <SelectItem value="masculino">M</SelectItem>
+                        <SelectItem value="feminino">F</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="px-2 py-1">
                     <Switch
                       checked={(edits[p.id]?.ativo ?? p.ativo) as boolean}
                       onCheckedChange={(v) => setVal(p.id, "ativo", v)}
@@ -311,7 +337,7 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
                 );
               })}
               {!participantes.length && (
-                <tr><td colSpan={10} className="text-center text-sm text-muted-foreground py-6">Nenhum participante cadastrado.</td></tr>
+                <tr><td colSpan={11} className="text-center text-sm text-muted-foreground py-6">Nenhum participante cadastrado.</td></tr>
               )}
             </tbody>
           </table>

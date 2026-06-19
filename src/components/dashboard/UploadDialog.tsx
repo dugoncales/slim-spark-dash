@@ -25,7 +25,17 @@ type ParsedRow = {
   consultas_edfisica: number;
   observacao: string | null;
   grupo: string | null;
+  sexo: "masculino" | "feminino" | null;
 };
+
+function parseSexo(v: unknown): "masculino" | "feminino" | null {
+  if (v == null) return null;
+  const s = String(v).trim().toLowerCase();
+  if (!s) return null;
+  if (s.startsWith("m") || s === "h" || s === "homem" || s === "masc") return "masculino";
+  if (s.startsWith("f") || s === "mulher" || s === "fem") return "feminino";
+  return null;
+}
 
 const CORES_AUTO = ["#3b82f6", "#f97316", "#10b981", "#a855f7", "#ef4444", "#14b8a6", "#eab308", "#ec4899"];
 
@@ -82,6 +92,7 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
           consultas_edfisica: num(r["Consultas Educadora Física"]) ?? num(r["Consultas Educadora Fisica"]) ?? 0,
           observacao: str(r["Observação"] ?? r["Observacao"]),
           grupo: str(r["Grupo"] ?? r["grupo"]),
+          sexo: parseSexo(r["Sexo"] ?? r["sexo"] ?? r["Genero"] ?? r["Gênero"]),
         }));
       if (parsed.length === 0) {
         toast.error("Nenhuma linha válida encontrada. Verifique o formato da planilha.");
@@ -146,17 +157,19 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
             imc_inicial: r.imc_inicial,
             circunferencia_inicial: r.circunferencia_inicial,
             grupo_id: grupoId,
+            sexo: r.sexo,
           }).select("id").single();
           if (error) throw error;
           participanteId = data.id;
         } else {
-          // Only overwrite grupo_id when the sheet specifies one (avoid wiping manual assignments).
+          // Only overwrite grupo_id / sexo when the sheet specifies them (avoid wiping manual assignments).
           await supabase.from("participantes").update({
             nome: r.nome,
             peso_inicial: r.peso_inicial,
             imc_inicial: r.imc_inicial,
             circunferencia_inicial: r.circunferencia_inicial,
             ...(grupoId ? { grupo_id: grupoId } : {}),
+            ...(r.sexo ? { sexo: r.sexo } : {}),
           }).eq("id", participanteId);
         }
         let imcMes = r.imc_mes;
@@ -203,7 +216,7 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
           <DialogTitle>Importar planilha mensal</DialogTitle>
           <DialogDescription>
             Faça upload do arquivo Excel no mesmo formato do modelo. Pessoas novas são adicionadas; já existentes têm a medição do mês atualizada.
-            {" "}Coluna opcional <code className="px-1 rounded bg-muted text-xs">Grupo</code> (nome do grupo) — se o grupo não existir e você for admin, ele é criado automaticamente.
+            {" "}Colunas opcionais: <code className="px-1 rounded bg-muted text-xs">Grupo</code> (nome do grupo, criado automaticamente se você for admin) e <code className="px-1 rounded bg-muted text-xs">Sexo</code> (M/F — necessário para calcular risco cardiovascular pela circunferência abdominal).
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

@@ -37,12 +37,14 @@ import {
   fetchAll,
   serieParticipante,
   calcPesoIdealRange,
+  calcRiscoParticipante,
   formatMes,
   nomeOuNumero,
   doseColor,
   doseLabel,
 } from "@/lib/dashboard-data";
 import { imcReferenceAreas, ImcBandsLegend } from "@/components/dashboard/ImcReferenceBands";
+import { RiscoCard } from "@/components/dashboard/RiscoCard";
 
 export const Route = createFileRoute("/paciente/$id")({
   component: PacientePage,
@@ -119,6 +121,7 @@ function PacientePage() {
   const perdaPct = perdaKg != null && pesoInicial ? (perdaKg / pesoInicial) * 100 : null;
 
   const idealRange = calcPesoIdealRange(participante.altura);
+  const risco = calcRiscoParticipante(participante, medicoesOrdenadas);
 
   const totals = medicoesOrdenadas.reduce(
     (acc, m) => {
@@ -220,6 +223,10 @@ function PacientePage() {
             accent
           />
         </section>
+
+        <RiscoCard risco={risco} sexo={participante.sexo} />
+
+
 
         <Card className="p-5">
           <header className="flex items-center gap-2 mb-3">

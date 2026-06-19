@@ -17,6 +17,7 @@ export type ExportSection = { id: string; label: string };
 export const EXPORT_SECTIONS: ExportSection[] = [
   { id: "kpis", label: "Indicadores principais (KPIs)" },
   { id: "marcos", label: "Marcos clínicos" },
+  { id: "risco", label: "Risco cardiovascular (circunferência)" },
   { id: "tabela", label: "Tabela de participantes" },
   { id: "comparacao", label: "Gráficos de barras (Peso e IMC)" },
   { id: "evolucao", label: "Evolução do grupo" },

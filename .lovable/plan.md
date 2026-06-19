@@ -1,66 +1,71 @@
-# Plano de melhorias — análise por grupos
+## Objetivo
 
-Entrega das 4 melhorias selecionadas, em ordem de implementação para reaproveitar código entre elas.
+Adicionar análise de **risco de angina** e **risco cardiovascular adicional** com base na circunferência abdominal acima do limite WHO, exibindo risco atual, inicial e variação (melhora/piora) no dashboard geral e na página individual do paciente.
 
-## 1. Coluna "grupo" no upload Excel
+## Regras de cálculo
 
-Arquivo: `src/components/dashboard/UploadDialog.tsx`.
+**Limites WHO (por sexo):**
+- Homens: 94 cm
+- Mulheres: 80 cm
 
-- Aceitar nova coluna opcional **`grupo`** na planilha (nome do grupo, texto).
-- No parser:
-  - Carregar `grupos` ativos uma vez antes do processamento.
-  - Para cada linha com `grupo` preenchido: buscar por nome (case-insensitive). Se não existir, **criar automaticamente** com cor padrão (próxima da paleta) — apenas se o usuário for admin; gestor_saude recebe aviso e a linha é importada sem grupo.
-  - Atribuir `grupo_id` no upsert de `participantes`.
-- Atualizar o modelo de planilha/instruções no diálogo listando a nova coluna como opcional.
-- Relatório final do upload mostra quantos grupos foram criados e quantos participantes foram vinculados.
+**Excesso (cm):** `max(0, circunferencia - limite_sexo)`
 
-## 2. Dashboard executivo por grupo
+**Risco relativo de angina:** `(1,075)^excesso − 1` exibido em %
+Ex.: 5 cm acima ⇒ +43,6%
 
-Novo arquivo: `src/routes/grupos.tsx` (rota `/grupos`), item no `AppSidebar` para qualquer usuário autenticado.
+**Risco cardiovascular adicional:** `3,5% × excesso` (média de 3–4% por cm)
+Ex.: 5 cm acima ⇒ +17,5%
 
-Layout: grid de cards, um por grupo ativo + card "Sem grupo".
+**Variação de risco:** `risco_atual − risco_inicial` (negativo = melhora).
 
-Cada card mostra:
-- Nome do grupo + bolinha colorida + nº de participantes ativos.
-- KPIs compactos: % atingiu meta de IMC, Δ peso médio, Δ circunferência média, aderência média de consultas (todos no período já filtrado pela coorte selecionada no topo).
-- Mini sparkline de evolução de peso médio.
-- Botão "Ver no dashboard" → navega para `/` com `?grupos=<id>` pré-selecionado.
+Quando `sexo` não estiver preenchido, o paciente entra como "sem classificação" e fica fora das médias (mostrado contador).
 
-Reaproveita os cálculos de `dashboard-data.ts` passando `grupoIds: [id]` para cada card. Filtro de coorte (mês de início) também disponível no topo.
+## Mudanças
 
-## 3. Comparação lado a lado de grupos
+### 1. Banco de dados (migração)
+- Adicionar coluna `sexo` em `participantes` (enum `sexo_tipo` ∈ {`masculino`, `feminino`}, nullable).
+- Sem mudanças em `medicoes` (já tem `circunferencia`).
 
-No dashboard principal (`src/routes/index.tsx`), quando o filtro de grupos tiver **2+ grupos selecionados**, ativar modo comparação:
+### 2. Camada de dados — `src/lib/dashboard-data.ts`
+Novos helpers puros:
+- `LIMITE_CINTURA = { masculino: 94, feminino: 80 }`
+- `calcExcessoCintura(circ, sexo)` → cm acima do limite (0 se ≤ limite ou sexo nulo)
+- `calcRiscoAngina(excesso)` → `(1.075 ** excesso) - 1`
+- `calcRiscoCV(excesso)` → `0.035 * excesso`
+- `calcRiscoParticipante(p, medicaoAtual)` → `{ inicial, atual, deltaAngina, deltaCV }` usando `circunferencia_inicial` vs última medição
+- `calcRiscoMedioGrupo(participantes, medicoes, filtros)` → médias de risco atual/inicial/delta, % de participantes que reduziram risco
 
-- Novo toggle "Comparar grupos" ao lado do filtro (default ligado quando 2+ grupos selecionados).
-- Gráficos de evolução (`EvolucaoChart`): renderizar **uma série por grupo** no mesmo gráfico, cada série na cor do grupo. Aplica-se a: peso médio, IMC médio, circunferência, aderência de consultas, atividade física, nutrição.
-- KPIs no topo: mostrar **mini-tabela** com uma linha por grupo (em vez de cards únicos), colunas = mesmas métricas atuais.
-- Quando 0 ou 1 grupo selecionado, mantém visualização atual.
+### 3. Cadastro e upload
+- **`UploadDialog.tsx`**: aceitar coluna opcional `sexo` (`M`/`F`/`Masculino`/`Feminino`), normalizar e gravar em `participantes.sexo`. Atualizar planilha-modelo e instruções.
+- **`gestao.tsx`**: adicionar `<Select>` de sexo no formulário de criação/edição de participante.
 
-Mudanças técnicas:
-- Adicionar `calcEvolucaoPorGrupo(participantes, medicoes, grupoIds, calcFn)` em `dashboard-data.ts` que retorna `Record<grupoId, EvolucaoPoint[]>`.
-- `EvolucaoChart` aceita prop opcional `series: { id, nome, cor, dados }[]` para multi-série.
+### 4. Dashboard geral — `src/routes/index.tsx`
+Nova seção colapsável **"Risco cardiovascular (circunferência)"** com:
+- KPI: Risco de angina médio (atual) + delta vs inicial (verde se ↓, vermelho se ↑)
+- KPI: Risco CV adicional médio (atual) + delta
+- KPI: % de participantes com redução de risco
+- KPI: Excesso médio de cintura (cm acima do limite)
+- Mini-tabela: top 5 maiores reduções e top 5 maiores aumentos
+- Respeita filtros de mês/grupo/cohort já existentes
+- Rodapé com nota metodológica (limites WHO, fórmulas)
 
-## 4. Exportar relatório filtrado por grupo
-
-Arquivos: `src/components/dashboard/ExportMenu.tsx` e `ExportSectionsDialog.tsx`.
-
-- Exportação já existente passa a respeitar o filtro de grupos ativo no dashboard.
-- Cabeçalho do PDF/Excel exportado inclui:
-  - Linha "Grupos: Nome A, Nome B" (ou "Todos" / "Sem grupo").
-  - Linha "Coorte: <mês de início>" (já existente, manter).
-- Nome do arquivo: `relatorio_<grupos-slug>_<data>.pdf` (ex.: `relatorio_empresa-a_2026-06-19.pdf`). Se "Todos", usa `relatorio_geral`.
-- Se modo comparação estiver ativo, o PDF gera **uma seção por grupo** (reusa renderização atual aplicada N vezes) + uma seção "Comparativo" com gráficos multi-série.
+### 5. Página individual — `src/routes/paciente.$id.tsx`
+Novo card **"Risco cardiovascular estimado"** acima dos gráficos:
+- Risco de angina inicial → atual, com seta e variação em pp
+- Risco CV adicional inicial → atual, com seta e variação em pp
+- Badge: "Redução de X cm na cintura" ou "Aumento de X cm"
+- Se sexo não preenchido: aviso "Preencha o sexo em /gestao para calcular o risco"
+- Mini-linha do tempo do risco ao longo dos meses (reutiliza `Line` do recharts já em uso)
 
 ## Detalhes técnicos
 
-- Sem mudanças de schema: `participantes.grupo_id` e tabela `grupos` já existem da entrega anterior.
+- O ESLint bloqueia mudanças no `client.ts`/`types.ts` gerados; após a migração, o tipo `sexo` aparece automaticamente em `types.ts` regenerado.
+- Cores: usar `--destructive` para risco alto/aumento, `--primary` (verde semântico já existente nos KPIs) para redução. Sem hardcode de hex.
+- Formatação: `Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDigits: 1 })` para taxas; `pp` (pontos percentuais) para variações.
 - Sem novas dependências.
-- Reaproveitamento: passos 2, 3 e 4 dependem do parâmetro `grupoIds` já adicionado às funções de `dashboard-data.ts`.
-- Performance: `fetchAll()` já traz `grupos`; cálculos por grupo no card executivo rodam em memória sobre o mesmo dataset.
 
-## Fora de escopo
+## Fora do escopo
 
-- Edição de grupo direto a partir do card executivo (continua em `/admin`).
-- Comparação entre coortes diferentes simultaneamente.
-- Agendamento/envio automático de relatórios por email.
+- Cálculo de risco absoluto de evento (precisa de score validado tipo Framingham).
+- Alertas/notificações por paciente em zona de risco.
+- Edição em lote do campo sexo (será preenchido via upload Excel ou edição individual).

@@ -49,6 +49,7 @@ import {
   calcEvolucaoAtividadeFisica,
   calcEvolucaoNutricao,
   calcEvolucaoAderenciaConsultas,
+  calcRiscoMedioGrupo,
   aplicarFiltroGrupos,
   SEM_GRUPO,
 } from "@/lib/dashboard-data";
@@ -329,6 +330,8 @@ function Dashboard() {
   const pct5 = marcos.total ? (marcos.atingiram5 / marcos.total) * 100 : 0;
   const pct10 = marcos.total ? (marcos.atingiram10 / marcos.total) * 100 : 0;
 
+  const riscoMedio = calcRiscoMedioGrupo(allParticipantes, allMedicoes, coorteAtiva, grupoIdsAtivos);
+
   const exportRows: ExportRow[] = rows.map((r, i) => ({
     nome: displayName(r.p, i),
     pesoInicial: r.p.peso_inicial,
@@ -496,6 +499,128 @@ function Dashboard() {
         </div>
       </CollapsibleSection>
     ) : null;
+
+  const pctFmt1 = (v: number) =>
+    `${(v * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+  const ppFmt1 = (v: number) =>
+    `${v < 0 ? "−" : v > 0 ? "+" : ""}${Math.abs(v * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} pp`;
+
+  const topReducoes = [...riscoMedio.detalhes]
+    .sort((a, b) => a.risco.deltaAngina - b.risco.deltaAngina)
+    .slice(0, 5);
+  const topAumentos = [...riscoMedio.detalhes]
+    .sort((a, b) => b.risco.deltaAngina - a.risco.deltaAngina)
+    .filter((d) => d.risco.deltaAngina > 0)
+    .slice(0, 5);
+
+  const riscoSection =
+    riscoMedio.n > 0 ? (
+      <CollapsibleSection
+        id="risco"
+        title="Risco cardiovascular (circunferência)"
+        subtitle={`Cintura abdominal vs limite WHO (H: 94 cm · M: 80 cm) — ${riscoMedio.n} participante(s)${riscoMedio.semDados ? ` · ${riscoMedio.semDados} sem sexo/circ.` : ""}`}
+        icon={HeartPulse}
+        {...sectionExportProps}
+      >
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <RiscoKpi
+            icon={HeartPulse}
+            label="Risco médio de angina"
+            value={pctFmt1(riscoMedio.riscoAnginaAtualMedio)}
+            sub={`${ppFmt1(riscoMedio.deltaAnginaMedio)} vs inicial`}
+            tone={riscoMedio.deltaAnginaMedio < 0 ? "success" : riscoMedio.deltaAnginaMedio > 0 ? "destructive" : undefined}
+          />
+          <RiscoKpi
+            icon={HeartPulse}
+            label="Risco CV adicional médio"
+            value={pctFmt1(riscoMedio.riscoCVAtualMedio)}
+            sub={`${ppFmt1(riscoMedio.deltaCVMedio)} vs inicial`}
+            tone={riscoMedio.deltaCVMedio < 0 ? "success" : riscoMedio.deltaCVMedio > 0 ? "destructive" : undefined}
+          />
+          <RiscoKpi
+            icon={TrendingDown}
+            label="Reduziram o risco"
+            value={`${fmt(riscoMedio.pctReduziuRisco, 0)}%`}
+            sub={`${riscoMedio.detalhes.filter((d) => d.risco.deltaAngina < 0).length} de ${riscoMedio.n}`}
+            tone="success"
+          />
+          <RiscoKpi
+            icon={TrendingUp}
+            label="Cintura média acima do limite"
+            value={`${fmt(riscoMedio.excessoAtualMedio, 1)} cm`}
+            sub="excesso atual"
+          />
+        </div>
+
+
+        {(topReducoes.length > 0 || topAumentos.length > 0) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+            {topReducoes.some((d) => d.risco.deltaAngina < 0) && (
+              <Card className="p-4">
+                <h4 className="text-xs font-semibold mb-3 flex items-center gap-1.5 text-success">
+                  <TrendingDown className="h-3.5 w-3.5" />
+                  Top reduções de risco de angina
+                </h4>
+                <ol className="space-y-1.5 text-sm">
+                  {topReducoes
+                    .filter((d) => d.risco.deltaAngina < 0)
+                    .map((d, i) => (
+                      <li key={d.participante.id} className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span className="text-success font-bold w-5">{i + 1}º</span>
+                          <Link
+                            to="/paciente/$id"
+                            params={{ id: d.participante.id }}
+                            className="truncate text-primary hover:underline"
+                          >
+                            {mostrarNomes ? d.participante.nome : `Pessoa ${d.participante.numero}`}
+                          </Link>
+                        </span>
+                        <span className="font-semibold text-success whitespace-nowrap">
+                          {ppFmt1(d.risco.deltaAngina)}
+                        </span>
+                      </li>
+                    ))}
+                </ol>
+              </Card>
+            )}
+            {topAumentos.length > 0 && (
+              <Card className="p-4">
+                <h4 className="text-xs font-semibold mb-3 flex items-center gap-1.5 text-destructive">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  Aumentos de risco — atenção
+                </h4>
+                <ol className="space-y-1.5 text-sm">
+                  {topAumentos.map((d, i) => (
+                    <li key={d.participante.id} className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="text-destructive font-bold w-5">{i + 1}º</span>
+                        <Link
+                          to="/paciente/$id"
+                          params={{ id: d.participante.id }}
+                          className="truncate text-primary hover:underline"
+                        >
+                          {mostrarNomes ? d.participante.nome : `Pessoa ${d.participante.numero}`}
+                        </Link>
+                      </span>
+                      <span className="font-semibold text-destructive whitespace-nowrap">
+                        {ppFmt1(d.risco.deltaAngina)}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </Card>
+            )}
+          </div>
+        )}
+
+        <p className="text-[10px] text-muted-foreground mt-4 leading-relaxed">
+          Risco de angina = (1,075)<sup>cm acima do limite</sup> − 1 · Risco cardiovascular adicional = 3,5% × cm acima · Limites WHO: 94 cm (H), 80 cm (M).
+          {riscoMedio.semDados > 0 && ` · ${riscoMedio.semDados} participante(s) sem sexo ou circunferência foram desconsiderados.`}
+        </p>
+      </CollapsibleSection>
+    ) : null;
+
 
   const tabelaSubtitle = (
     <span className="flex items-center gap-2 truncate">
@@ -917,6 +1042,7 @@ function Dashboard() {
   const sectionMap: Record<string, React.ReactNode | null> = {
     kpis: kpisSection,
     marcos: marcosSection,
+    risco: riscoSection,
     tabela: tabelaSection,
     comparacao: comparacaoSection,
     evolucao: evolucaoSection,
@@ -1115,6 +1241,7 @@ function Dashboard() {
             <>
               {kpisSection}
               {marcosSection}
+              {riscoSection}
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] gap-6 items-start">
                 <div className="min-w-0">{tabelaSection}</div>
                 <div className="space-y-6">
@@ -1138,3 +1265,39 @@ function Dashboard() {
     </div>
   );
 }
+
+function RiscoKpi({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  tone,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  sub?: string;
+  tone?: "success" | "destructive";
+}) {
+  const tint =
+    tone === "success"
+      ? "bg-success/15 text-success"
+      : tone === "destructive"
+        ? "bg-destructive/15 text-destructive"
+        : "bg-primary/10 text-primary";
+  const subColor =
+    tone === "success" ? "text-success" : tone === "destructive" ? "text-destructive" : "text-muted-foreground";
+  return (
+    <Card className="p-4 flex items-start gap-3 shadow-sm">
+      <div className={`h-11 w-11 rounded-lg flex items-center justify-center shrink-0 ${tint}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">{label}</p>
+        <p className="text-2xl font-bold leading-tight">{value}</p>
+        {sub && <p className={`text-[11px] mt-0.5 ${subColor}`}>{sub}</p>}
+      </div>
+    </Card>
+  );
+}
+
