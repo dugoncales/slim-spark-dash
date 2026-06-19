@@ -121,6 +121,7 @@ function PacientePage() {
   const perdaPct = perdaKg != null && pesoInicial ? (perdaKg / pesoInicial) * 100 : null;
 
   const idealRange = calcPesoIdealRange(participante.altura);
+  const risco = calcRiscoParticipante(participante, medicoesOrdenadas);
 
   const totals = medicoesOrdenadas.reduce(
     (acc, m) => {
