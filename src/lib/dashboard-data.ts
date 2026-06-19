@@ -190,13 +190,19 @@ export function formatDoseValue(mg: number): string {
 
 
 export async function fetchAll() {
-  const [p, m] = await Promise.all([
+  const [p, m, g] = await Promise.all([
     supabase.from("participantes").select("*").order("numero"),
     supabase.from("medicoes").select("*").order("mes_referencia"),
+    supabase.from("grupos").select("*").order("nome"),
   ]);
   if (p.error) throw p.error;
   if (m.error) throw m.error;
-  return { participantes: (p.data ?? []) as Participante[], medicoes: (m.data ?? []) as Medicao[] };
+  if (g.error) throw g.error;
+  return {
+    participantes: (p.data ?? []) as Participante[],
+    medicoes: (m.data ?? []) as Medicao[],
+    grupos: (g.data ?? []) as Grupo[],
+  };
 }
 
 export const MESES_PT = [
