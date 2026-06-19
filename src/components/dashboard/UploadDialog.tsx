@@ -25,7 +25,17 @@ type ParsedRow = {
   consultas_edfisica: number;
   observacao: string | null;
   grupo: string | null;
+  sexo: "masculino" | "feminino" | null;
 };
+
+function parseSexo(v: unknown): "masculino" | "feminino" | null {
+  if (v == null) return null;
+  const s = String(v).trim().toLowerCase();
+  if (!s) return null;
+  if (s.startsWith("m") || s === "h" || s === "homem" || s === "masc") return "masculino";
+  if (s.startsWith("f") || s === "mulher" || s === "fem") return "feminino";
+  return null;
+}
 
 const CORES_AUTO = ["#3b82f6", "#f97316", "#10b981", "#a855f7", "#ef4444", "#14b8a6", "#eab308", "#ec4899"];
 
