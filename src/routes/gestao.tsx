@@ -211,14 +211,26 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
       {/* Adicionar */}
       <Card className="p-5">
         <h2 className="font-semibold mb-3">Adicionar participante</h2>
-        <div className="grid grid-cols-2 md:grid-cols-7 gap-3 items-end">
+        <div className="grid grid-cols-2 md:grid-cols-8 gap-3 items-end">
           <div className="md:col-span-2"><Label>Nome</Label><Input value={novoPart.nome} onChange={e => setNovoPart({ ...novoPart, nome: e.target.value })} /></div>
           <div><Label>Altura (m)</Label><Input type="number" step="0.01" placeholder="1.70" value={novoPart.altura} onChange={e => setNovoPart({ ...novoPart, altura: e.target.value })} /></div>
           <div><Label>Peso inicial (kg)</Label><Input type="number" step="0.1" value={novoPart.peso_inicial} onChange={e => setNovoPart({ ...novoPart, peso_inicial: e.target.value })} /></div>
           <div><Label>IMC (auto)</Label><Input value={imcPreview} readOnly className="bg-muted" /></div>
           <div><Label>Circ. (cm)</Label><Input type="number" step="0.1" value={novoPart.circunferencia_inicial} onChange={e => setNovoPart({ ...novoPart, circunferencia_inicial: e.target.value })} /></div>
           <div><Label>Mês de início</Label><Input type="month" value={novoPart.mes_inicio} onChange={e => setNovoPart({ ...novoPart, mes_inicio: e.target.value })} /></div>
-          <Button onClick={addParticipante} className="md:col-span-7 md:w-fit"><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
+          <div>
+            <Label>Grupo</Label>
+            <Select value={novoPart.grupo_id || "__none"} onValueChange={(v) => setNovoPart({ ...novoPart, grupo_id: v === "__none" ? "" : v })}>
+              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">— Sem grupo —</SelectItem>
+                {grupos.filter(g => g.ativo).map(g => (
+                  <SelectItem key={g.id} value={g.id}>{g.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={addParticipante} className="md:col-span-8 md:w-fit"><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
         </div>
       </Card>
 
