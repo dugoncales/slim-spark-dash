@@ -148,10 +148,11 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
       imc_inicial: imc,
       circunferencia_inicial: novoPart.circunferencia_inicial ? parseFloat(novoPart.circunferencia_inicial) : null,
       mes_inicio: `${novoPart.mes_inicio}-01`,
+      grupo_id: novoPart.grupo_id || null,
     });
     if (error) { toast.error(error.message); return; }
     toast.success("Participante adicionado.");
-    setNovoPart({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: defaultMes });
+    setNovoPart({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: defaultMes, grupo_id: "" });
     refetch();
   }
 
