@@ -1241,6 +1241,7 @@ function Dashboard() {
             <>
               {kpisSection}
               {marcosSection}
+              {riscoSection}
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] gap-6 items-start">
                 <div className="min-w-0">{tabelaSection}</div>
                 <div className="space-y-6">
