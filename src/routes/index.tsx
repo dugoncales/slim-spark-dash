@@ -48,7 +48,12 @@ import {
   calcEvolucaoAtividadeFisica,
   calcEvolucaoNutricao,
   calcEvolucaoAderenciaConsultas,
+  aplicarFiltroGrupos,
+  SEM_GRUPO,
 } from "@/lib/dashboard-data";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { MultiMonthBarChart, type MultiMonthRow } from "@/components/dashboard/MultiMonthBarChart";
 import { UploadDialog } from "@/components/dashboard/UploadDialog";
