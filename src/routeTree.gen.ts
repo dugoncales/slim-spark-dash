@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as GruposRouteImport } from './routes/grupos'
 import { Route as GestaoRouteImport } from './routes/gestao'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -18,6 +19,11 @@ import { Route as PacienteIdRouteImport } from './routes/paciente.$id'
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GruposRoute = GruposRouteImport.update({
+  id: '/grupos',
+  path: '/grupos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GestaoRoute = GestaoRouteImport.update({
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/gestao': typeof GestaoRoute
+  '/grupos': typeof GruposRoute
   '/login': typeof LoginRoute
   '/paciente/$id': typeof PacienteIdRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/gestao': typeof GestaoRoute
+  '/grupos': typeof GruposRoute
   '/login': typeof LoginRoute
   '/paciente/$id': typeof PacienteIdRoute
 }
@@ -60,21 +68,30 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/gestao': typeof GestaoRoute
+  '/grupos': typeof GruposRoute
   '/login': typeof LoginRoute
   '/paciente/$id': typeof PacienteIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/gestao' | '/login' | '/paciente/$id'
+  fullPaths: '/' | '/admin' | '/gestao' | '/grupos' | '/login' | '/paciente/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/gestao' | '/login' | '/paciente/$id'
-  id: '__root__' | '/' | '/admin' | '/gestao' | '/login' | '/paciente/$id'
+  to: '/' | '/admin' | '/gestao' | '/grupos' | '/login' | '/paciente/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/gestao'
+    | '/grupos'
+    | '/login'
+    | '/paciente/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   GestaoRoute: typeof GestaoRoute
+  GruposRoute: typeof GruposRoute
   LoginRoute: typeof LoginRoute
   PacienteIdRoute: typeof PacienteIdRoute
 }
@@ -86,6 +103,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/grupos': {
+      id: '/grupos'
+      path: '/grupos'
+      fullPath: '/grupos'
+      preLoaderRoute: typeof GruposRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gestao': {
@@ -123,6 +147,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   GestaoRoute: GestaoRoute,
+  GruposRoute: GruposRoute,
   LoginRoute: LoginRoute,
   PacienteIdRoute: PacienteIdRoute,
 }

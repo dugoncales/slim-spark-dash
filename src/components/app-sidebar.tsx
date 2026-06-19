@@ -26,6 +26,7 @@ export function AppSidebar() {
 
   const items = [
     { title: "Dashboard", url: "/", icon: LayoutDashboard, show: true },
+    { title: "Grupos", url: "/grupos", icon: Layers, show: true },
     { title: "Gestão", url: "/gestao", icon: Settings2, show: isGestorSaude },
     { title: "Administração", url: "/admin", icon: ShieldCheck, show: isAdmin },
   ].filter((i) => i.show);
