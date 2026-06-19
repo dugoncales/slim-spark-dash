@@ -231,6 +231,17 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label>Sexo</Label>
+            <Select value={novoPart.sexo || "__none"} onValueChange={(v) => setNovoPart({ ...novoPart, sexo: v === "__none" ? "" : v })}>
+              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">— Não informado —</SelectItem>
+                <SelectItem value="masculino">Masculino</SelectItem>
+                <SelectItem value="feminino">Feminino</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Button onClick={addParticipante} className="md:col-span-8 md:w-fit"><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
         </div>
       </Card>
