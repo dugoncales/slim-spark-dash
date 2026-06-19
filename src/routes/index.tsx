@@ -236,11 +236,14 @@ function Dashboard() {
 
   const allParticipantes = data?.participantes ?? [];
   const allMedicoes = data?.medicoes ?? [];
+  const grupos = data?.grupos ?? [];
   const coorteAtiva = coorte !== "__all__" ? coorte : null;
+  const grupoIdsAtivos = grupoSel.length ? grupoSel : null;
   const coortesDisponiveis = mesesDistintosInicio(allParticipantes);
-  const participantes = coorteAtiva
-    ? allParticipantes.filter((p) => p.mes_inicio === coorteAtiva)
-    : allParticipantes;
+  const participantes = aplicarFiltroGrupos(
+    coorteAtiva ? allParticipantes.filter((p) => p.mes_inicio === coorteAtiva) : allParticipantes,
+    grupoIdsAtivos,
+  );
   const medicoesDoMes = allMedicoes.filter((m) => m.mes_referencia === mesSel);
   const byPart = new Map(medicoesDoMes.map((m) => [m.participante_id, m]));
 
