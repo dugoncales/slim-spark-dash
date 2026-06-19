@@ -37,12 +37,14 @@ import {
   fetchAll,
   serieParticipante,
   calcPesoIdealRange,
+  calcRiscoParticipante,
   formatMes,
   nomeOuNumero,
   doseColor,
   doseLabel,
 } from "@/lib/dashboard-data";
 import { imcReferenceAreas, ImcBandsLegend } from "@/components/dashboard/ImcReferenceBands";
+import { RiscoCard } from "@/components/dashboard/RiscoCard";
 
 export const Route = createFileRoute("/paciente/$id")({
   component: PacientePage,
