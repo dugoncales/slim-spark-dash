@@ -314,6 +314,19 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
                   <td className="px-2 py-1"><Input className="h-8 w-20 bg-muted" readOnly value={imcLinha(p)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "circunferencia_inicial")} onChange={e => setVal(p.id, "circunferencia_inicial", e.target.value)} /></td>
                   <td className="px-2 py-1">
+                    <Select
+                      value={((edits[p.id]?.sexo as string | null | undefined) ?? p.sexo) || "__none"}
+                      onValueChange={(v) => setVal(p.id, "sexo", v === "__none" ? "" : v)}
+                    >
+                      <SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">—</SelectItem>
+                        <SelectItem value="masculino">M</SelectItem>
+                        <SelectItem value="feminino">F</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="px-2 py-1">
                     <Switch
                       checked={(edits[p.id]?.ativo ?? p.ativo) as boolean}
                       onCheckedChange={(v) => setVal(p.id, "ativo", v)}
