@@ -256,7 +256,7 @@ export function calcEvolucaoGrupo(
   medicoes: Medicao[],
   coorte?: string | null,
 ): EvolucaoMes[] {
-  const baseParts = coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes;
+  const baseParts = aplicarFiltroGrupos(coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes, grupoIds);
   const ids = new Set(baseParts.map((p) => p.id));
   const inicioById = new Map(baseParts.map((p) => [p.id, p.mes_inicio] as const));
   const mesesSet = new Set<string>();
@@ -383,7 +383,7 @@ export function calcMarcos(
   medicoes: Medicao[],
   coorte?: string | null,
 ): MarcosResumo {
-  const baseParts = coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes;
+  const baseParts = aplicarFiltroGrupos(coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes, grupoIds);
   let atingiram5 = 0,
     atingiram10 = 0,
     somaPct = 0,
@@ -458,7 +458,7 @@ export function calcEvolucaoAtividadeFisica(
   medicoes: Medicao[],
   coorte?: string | null,
 ): EvolucaoAtividadeFisicaMes[] {
-  const baseParts = coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes;
+  const baseParts = aplicarFiltroGrupos(coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes, grupoIds);
   const ids = new Set(baseParts.map((p) => p.id));
   const mesesSet = new Set<string>();
   medicoes.forEach((m) => { if (ids.has(m.participante_id)) mesesSet.add(m.mes_referencia); });
@@ -496,7 +496,7 @@ export function calcEvolucaoNutricao(
   medicoes: Medicao[],
   coorte?: string | null,
 ): EvolucaoNutricaoMes[] {
-  const baseParts = coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes;
+  const baseParts = aplicarFiltroGrupos(coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes, grupoIds);
   const ids = new Set(baseParts.map((p) => p.id));
   const mesesSet = new Set<string>();
   medicoes.forEach((m) => { if (ids.has(m.participante_id)) mesesSet.add(m.mes_referencia); });
@@ -542,7 +542,7 @@ export function calcEvolucaoAderenciaConsultas(
   medicoes: Medicao[],
   coorte?: string | null,
 ): EvolucaoAderenciaConsultasMes[] {
-  const baseParts = coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes;
+  const baseParts = aplicarFiltroGrupos(coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes, grupoIds);
   const ids = new Set(baseParts.map((p) => p.id));
   const mesesSet = new Set<string>();
   medicoes.forEach((m) => { if (ids.has(m.participante_id)) mesesSet.add(m.mes_referencia); });
