@@ -64,7 +64,7 @@ function Gestao() {
 
 /* ============================== CADASTRO INICIAL ============================== */
 
-function CadastroInicial({ participantes, refetch, session }: { participantes: Participante[]; refetch: () => void; session: boolean }) {
+function CadastroInicial({ participantes, grupos, refetch, session }: { participantes: Participante[]; grupos: Grupo[]; refetch: () => void; session: boolean }) {
   const cfgQ = useQuery({
     queryKey: ["configuracoes"],
     enabled: session,
