@@ -500,6 +500,127 @@ function Dashboard() {
       </CollapsibleSection>
     ) : null;
 
+  const pctFmt1 = (v: number) =>
+    `${(v * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+  const ppFmt1 = (v: number) =>
+    `${v < 0 ? "−" : v > 0 ? "+" : ""}${Math.abs(v * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} pp`;
+
+  const topReducoes = [...riscoMedio.detalhes]
+    .sort((a, b) => a.risco.deltaAngina - b.risco.deltaAngina)
+    .slice(0, 5);
+  const topAumentos = [...riscoMedio.detalhes]
+    .sort((a, b) => b.risco.deltaAngina - a.risco.deltaAngina)
+    .filter((d) => d.risco.deltaAngina > 0)
+    .slice(0, 5);
+
+  const riscoSection =
+    riscoMedio.n > 0 ? (
+      <CollapsibleSection
+        id="risco"
+        title="Risco cardiovascular (circunferência)"
+        subtitle={`Cintura abdominal vs limite WHO (H: 94 cm · M: 80 cm) — ${riscoMedio.n} participante(s)${riscoMedio.semDados ? ` · ${riscoMedio.semDados} sem sexo/circ.` : ""}`}
+        icon={HeartPulse}
+        {...sectionExportProps}
+      >
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KpiCard
+            icon={HeartPulse}
+            label="Risco médio de angina"
+            value={pctFmt1(riscoMedio.riscoAnginaAtualMedio)}
+            sub={`${ppFmt1(riscoMedio.deltaAnginaMedio)} vs inicial`}
+            accent={riscoMedio.deltaAnginaMedio < 0 ? "success" : riscoMedio.deltaAnginaMedio > 0 ? "destructive" : "accent"}
+          />
+          <KpiCard
+            icon={HeartPulse}
+            label="Risco CV adicional médio"
+            value={pctFmt1(riscoMedio.riscoCVAtualMedio)}
+            sub={`${ppFmt1(riscoMedio.deltaCVMedio)} vs inicial`}
+            accent={riscoMedio.deltaCVMedio < 0 ? "success" : riscoMedio.deltaCVMedio > 0 ? "destructive" : "accent"}
+          />
+          <KpiCard
+            icon={TrendingDown}
+            label="Reduziram o risco"
+            value={`${fmt(riscoMedio.pctReduziuRisco, 0)}%`}
+            sub={`${riscoMedio.detalhes.filter((d) => d.risco.deltaAngina < 0).length} de ${riscoMedio.n}`}
+            accent="success"
+          />
+          <KpiCard
+            icon={TrendingUp}
+            label="Cintura média acima do limite"
+            value={`${fmt(riscoMedio.excessoAtualMedio, 1)} cm`}
+            sub="excesso atual"
+          />
+        </div>
+
+        {(topReducoes.length > 0 || topAumentos.length > 0) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+            {topReducoes.some((d) => d.risco.deltaAngina < 0) && (
+              <Card className="p-4">
+                <h4 className="text-xs font-semibold mb-3 flex items-center gap-1.5 text-success">
+                  <TrendingDown className="h-3.5 w-3.5" />
+                  Top reduções de risco de angina
+                </h4>
+                <ol className="space-y-1.5 text-sm">
+                  {topReducoes
+                    .filter((d) => d.risco.deltaAngina < 0)
+                    .map((d, i) => (
+                      <li key={d.participante.id} className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span className="text-success font-bold w-5">{i + 1}º</span>
+                          <Link
+                            to="/paciente/$id"
+                            params={{ id: d.participante.id }}
+                            className="truncate text-primary hover:underline"
+                          >
+                            {mostrarNomes ? d.participante.nome : `Pessoa ${d.participante.numero}`}
+                          </Link>
+                        </span>
+                        <span className="font-semibold text-success whitespace-nowrap">
+                          {ppFmt1(d.risco.deltaAngina)}
+                        </span>
+                      </li>
+                    ))}
+                </ol>
+              </Card>
+            )}
+            {topAumentos.length > 0 && (
+              <Card className="p-4">
+                <h4 className="text-xs font-semibold mb-3 flex items-center gap-1.5 text-destructive">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  Aumentos de risco — atenção
+                </h4>
+                <ol className="space-y-1.5 text-sm">
+                  {topAumentos.map((d, i) => (
+                    <li key={d.participante.id} className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="text-destructive font-bold w-5">{i + 1}º</span>
+                        <Link
+                          to="/paciente/$id"
+                          params={{ id: d.participante.id }}
+                          className="truncate text-primary hover:underline"
+                        >
+                          {mostrarNomes ? d.participante.nome : `Pessoa ${d.participante.numero}`}
+                        </Link>
+                      </span>
+                      <span className="font-semibold text-destructive whitespace-nowrap">
+                        {ppFmt1(d.risco.deltaAngina)}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </Card>
+            )}
+          </div>
+        )}
+
+        <p className="text-[10px] text-muted-foreground mt-4 leading-relaxed">
+          Risco de angina = (1,075)<sup>cm acima do limite</sup> − 1 · Risco cardiovascular adicional = 3,5% × cm acima · Limites WHO: 94 cm (H), 80 cm (M).
+          {riscoMedio.semDados > 0 && ` · ${riscoMedio.semDados} participante(s) sem sexo ou circunferência foram desconsiderados.`}
+        </p>
+      </CollapsibleSection>
+    ) : null;
+
+
   const tabelaSubtitle = (
     <span className="flex items-center gap-2 truncate">
       <span>{rows.length} pessoa(s)</span>
