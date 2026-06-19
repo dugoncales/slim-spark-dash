@@ -188,6 +188,143 @@ function AdminPage() {
           </Table>
         </div>
       </Card>
+
+      <GruposAdmin />
     </div>
+  );
+}
+
+/* ============================== GRUPOS ============================== */
+
+function GruposAdmin() {
+  const gruposQ = useQuery({
+    queryKey: ["admin-grupos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("grupos").select("*").order("nome");
+      if (error) throw error;
+      return (data ?? []) as Grupo[];
+    },
+  });
+  const countsQ = useQuery({
+    queryKey: ["admin-grupos-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("participantes").select("grupo_id");
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      let semGrupo = 0;
+      (data ?? []).forEach((p: { grupo_id: string | null }) => {
+        if (p.grupo_id == null) semGrupo++;
+        else counts[p.grupo_id] = (counts[p.grupo_id] ?? 0) + 1;
+      });
+      return { counts, semGrupo };
+    },
+  });
+
+  const [novoNome, setNovoNome] = useState("");
+  const [novaCor, setNovaCor] = useState("#3b82f6");
+  const [busy, setBusy] = useState(false);
+
+  async function criarGrupo() {
+    if (!novoNome.trim()) { toast.error("Informe o nome."); return; }
+    setBusy(true);
+    const { error } = await supabase.from("grupos").insert({ nome: novoNome.trim(), cor: novaCor || null });
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Grupo criado.");
+    setNovoNome("");
+    gruposQ.refetch();
+  }
+
+  async function atualizarGrupo(id: string, patch: Partial<Grupo>) {
+    const { error } = await supabase.from("grupos").update(patch).eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    gruposQ.refetch();
+    countsQ.refetch();
+  }
+
+  async function removerGrupo(g: Grupo) {
+    const n = countsQ.data?.counts[g.id] ?? 0;
+    if (!confirm(`Excluir "${g.nome}"?${n ? ` ${n} participante(s) ficarão sem grupo.` : ""}`)) return;
+    const { error } = await supabase.from("grupos").delete().eq("id", g.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Grupo removido.");
+    gruposQ.refetch();
+    countsQ.refetch();
+  }
+
+  const grupos = gruposQ.data ?? [];
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Layers className="h-4 w-4 text-primary" />
+        <h2 className="font-semibold">Grupos de análise</h2>
+      </div>
+      <p className="text-xs text-muted-foreground mb-3">
+        Crie grupos (ex.: empresas, unidades) para segmentar os indicadores do dashboard.
+      </p>
+
+      <div className="flex items-end gap-2 mb-4 flex-wrap">
+        <div className="flex-1 min-w-[180px]">
+          <label className="text-xs text-muted-foreground">Nome do grupo</label>
+          <Input value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="Ex.: Empresa A" />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground">Cor</label>
+          <Input type="color" value={novaCor} onChange={(e) => setNovaCor(e.target.value)} className="w-16 p-1 h-9" />
+        </div>
+        <Button onClick={criarGrupo} disabled={busy}><Plus className="h-4 w-4 mr-1" />Criar</Button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Cor</TableHead>
+              <TableHead>Nome</TableHead>
+              <TableHead className="text-center">Participantes</TableHead>
+              <TableHead className="text-center">Ativo</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {grupos.map((g) => (
+              <TableRow key={g.id}>
+                <TableCell>
+                  <Input
+                    type="color"
+                    value={g.cor ?? "#94a3b8"}
+                    onChange={(e) => atualizarGrupo(g.id, { cor: e.target.value })}
+                    className="w-12 p-1 h-8"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input
+                    defaultValue={g.nome}
+                    onBlur={(e) => { if (e.target.value !== g.nome) atualizarGrupo(g.id, { nome: e.target.value }); }}
+                    className="h-8"
+                  />
+                </TableCell>
+                <TableCell className="text-center">{countsQ.data?.counts[g.id] ?? 0}</TableCell>
+                <TableCell className="text-center">
+                  <Switch checked={g.ativo} onCheckedChange={(v) => atualizarGrupo(g.id, { ativo: v })} />
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="sm" onClick={() => removerGrupo(g)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {!grupos.length && (
+              <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-4">Nenhum grupo cadastrado.</TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
+        {(countsQ.data?.semGrupo ?? 0) > 0 && (
+          <p className="text-xs text-muted-foreground mt-2">{countsQ.data!.semGrupo} participante(s) sem grupo atribuído.</p>
+        )}
+      </div>
+    </Card>
   );
 }
