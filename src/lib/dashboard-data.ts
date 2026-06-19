@@ -10,7 +10,33 @@ export type Participante = {
   circunferencia_inicial: number | null;
   ativo: boolean;
   mes_inicio: string | null;
+  grupo_id: string | null;
 };
+
+export type Grupo = {
+  id: string;
+  nome: string;
+  cor: string | null;
+  ativo: boolean;
+};
+
+/** Sentinela usada no filtro para representar "Sem grupo". */
+export const SEM_GRUPO = "__sem_grupo__";
+
+/**
+ * Aplica o filtro de grupos a uma lista de participantes.
+ * `grupoIds` vazio/null = sem filtro. Inclua `SEM_GRUPO` para casar `grupo_id === null`.
+ */
+export function aplicarFiltroGrupos<T extends { grupo_id: string | null }>(
+  parts: T[],
+  grupoIds?: string[] | null,
+): T[] {
+  if (!grupoIds || grupoIds.length === 0) return parts;
+  const set = new Set(grupoIds);
+  return parts.filter((p) =>
+    p.grupo_id == null ? set.has(SEM_GRUPO) : set.has(p.grupo_id),
+  );
+}
 
 export function calcImc(
   peso: number | null | undefined,
