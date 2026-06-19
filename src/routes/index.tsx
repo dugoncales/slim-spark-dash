@@ -48,7 +48,12 @@ import {
   calcEvolucaoAtividadeFisica,
   calcEvolucaoNutricao,
   calcEvolucaoAderenciaConsultas,
+  aplicarFiltroGrupos,
+  SEM_GRUPO,
 } from "@/lib/dashboard-data";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { MultiMonthBarChart, type MultiMonthRow } from "@/components/dashboard/MultiMonthBarChart";
 import { UploadDialog } from "@/components/dashboard/UploadDialog";
@@ -90,6 +95,7 @@ function Dashboard() {
 
   const [mesSel, setMesSel] = useState<string | null>(null);
   const [coorte, setCoorte] = useState<string>("__all__");
+  const [grupoSel, setGrupoSel] = useState<string[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
 
   // Export flow:
@@ -105,10 +111,15 @@ function Dashboard() {
   useEffect(() => {
     const c = window.localStorage.getItem("coorte");
     if (c) setCoorte(c);
+    const g = window.localStorage.getItem("grupoSel");
+    if (g) { try { setGrupoSel(JSON.parse(g)); } catch { /* ignore */ } }
   }, []);
   useEffect(() => {
     window.localStorage.setItem("coorte", coorte);
   }, [coorte]);
+  useEffect(() => {
+    window.localStorage.setItem("grupoSel", JSON.stringify(grupoSel));
+  }, [grupoSel]);
 
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["dashboard"],
@@ -225,11 +236,14 @@ function Dashboard() {
 
   const allParticipantes = data?.participantes ?? [];
   const allMedicoes = data?.medicoes ?? [];
+  const grupos = data?.grupos ?? [];
   const coorteAtiva = coorte !== "__all__" ? coorte : null;
+  const grupoIdsAtivos = grupoSel.length ? grupoSel : null;
   const coortesDisponiveis = mesesDistintosInicio(allParticipantes);
-  const participantes = coorteAtiva
-    ? allParticipantes.filter((p) => p.mes_inicio === coorteAtiva)
-    : allParticipantes;
+  const participantes = aplicarFiltroGrupos(
+    coorteAtiva ? allParticipantes.filter((p) => p.mes_inicio === coorteAtiva) : allParticipantes,
+    grupoIdsAtivos,
+  );
   const medicoesDoMes = allMedicoes.filter((m) => m.mes_referencia === mesSel);
   const byPart = new Map(medicoesDoMes.map((m) => [m.participante_id, m]));
 
@@ -286,16 +300,16 @@ function Dashboard() {
     return { peso, imc };
   })();
 
-  const evolucao = calcEvolucaoGrupo(allParticipantes, allMedicoes, coorteAtiva);
-  const evolAtivFisica = calcEvolucaoAtividadeFisica(allParticipantes, allMedicoes, coorteAtiva);
-  const evolNutricao = calcEvolucaoNutricao(allParticipantes, allMedicoes, coorteAtiva);
-  const evolAderencia = calcEvolucaoAderenciaConsultas(allParticipantes, allMedicoes, coorteAtiva);
+  const evolucao = calcEvolucaoGrupo(allParticipantes, allMedicoes, coorteAtiva, grupoIdsAtivos);
+  const evolAtivFisica = calcEvolucaoAtividadeFisica(allParticipantes, allMedicoes, coorteAtiva, grupoIdsAtivos);
+  const evolNutricao = calcEvolucaoNutricao(allParticipantes, allMedicoes, coorteAtiva, grupoIdsAtivos);
+  const evolAderencia = calcEvolucaoAderenciaConsultas(allParticipantes, allMedicoes, coorteAtiva, grupoIdsAtivos);
   const temDadosAdesao =
     evolAtivFisica.some((m) => m.n > 0) ||
     evolNutricao.some((m) => m.n > 0) ||
     evolAderencia.some((m) => m.media != null);
 
-  const marcos = calcMarcos(allParticipantes, allMedicoes, coorteAtiva);
+  const marcos = calcMarcos(allParticipantes, allMedicoes, coorteAtiva, grupoIdsAtivos);
   const pct5 = marcos.total ? (marcos.atingiram5 / marcos.total) * 100 : 0;
   const pct10 = marcos.total ? (marcos.atingiram10 / marcos.total) * 100 : 0;
 
@@ -951,6 +965,65 @@ function Dashboard() {
                   ))}
                 </SelectContent>
               </Select>
+            )}
+            {grupos.length > 0 && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Layers className="h-4 w-4" />
+                    {grupoSel.length === 0
+                      ? "Todos os grupos"
+                      : grupoSel.length === 1
+                        ? (grupos.find((g) => g.id === grupoSel[0])?.nome ?? (grupoSel[0] === SEM_GRUPO ? "Sem grupo" : "1 grupo"))
+                        : `${grupoSel.length} grupos`}
+                    {grupoSel.length > 0 && (
+                      <Badge variant="secondary" className="ml-1">{grupoSel.length}</Badge>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-64 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">Filtrar grupos</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => setGrupoSel([])}
+                      disabled={grupoSel.length === 0}
+                    >
+                      Limpar
+                    </Button>
+                  </div>
+                  <div className="space-y-2 max-h-72 overflow-y-auto">
+                    {grupos.filter((g) => g.ativo).map((g) => {
+                      const checked = grupoSel.includes(g.id);
+                      return (
+                        <label key={g.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(v) =>
+                              setGrupoSel((prev) => v ? [...prev, g.id] : prev.filter((x) => x !== g.id))
+                            }
+                          />
+                          {g.cor && (
+                            <span className="inline-block w-3 h-3 rounded-sm" style={{ background: g.cor }} />
+                          )}
+                          <span>{g.nome}</span>
+                        </label>
+                      );
+                    })}
+                    <label className="flex items-center gap-2 cursor-pointer text-sm border-t pt-2 mt-2">
+                      <Checkbox
+                        checked={grupoSel.includes(SEM_GRUPO)}
+                        onCheckedChange={(v) =>
+                          setGrupoSel((prev) => v ? [...prev, SEM_GRUPO] : prev.filter((x) => x !== SEM_GRUPO))
+                        }
+                      />
+                      <span className="text-muted-foreground">Sem grupo</span>
+                    </label>
+                  </div>
+                </PopoverContent>
+              </Popover>
             )}
             <ExportMenu
               rows={exportRows}

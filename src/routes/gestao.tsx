@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/use-auth";
 import { useRoles } from "@/hooks/use-roles";
 import { Checkbox } from "@/components/ui/checkbox";
-import { fetchAll, formatMes, calcImc, NUTRI_FIELDS, MEDICAMENTOS, formatDoseValue, type Medicao, type Participante } from "@/lib/dashboard-data";
+import { fetchAll, formatMes, calcImc, NUTRI_FIELDS, MEDICAMENTOS, formatDoseValue, type Medicao, type Participante, type Grupo } from "@/lib/dashboard-data";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -33,6 +33,7 @@ function Gestao() {
 
   const participantes = data?.participantes ?? [];
   const medicoes = data?.medicoes ?? [];
+  const grupos = data?.grupos ?? [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -50,7 +51,7 @@ function Gestao() {
             <TabsTrigger value="acompanhamento">Acompanhamento mensal</TabsTrigger>
           </TabsList>
           <TabsContent value="cadastro" className="mt-4">
-            <CadastroInicial participantes={participantes} refetch={refetch} session={!!session} />
+            <CadastroInicial participantes={participantes} grupos={grupos} refetch={refetch} session={!!session} />
           </TabsContent>
           <TabsContent value="acompanhamento" className="mt-4">
             <Acompanhamento participantes={participantes} medicoes={medicoes} refetch={refetch} />
@@ -63,7 +64,7 @@ function Gestao() {
 
 /* ============================== CADASTRO INICIAL ============================== */
 
-function CadastroInicial({ participantes, refetch, session }: { participantes: Participante[]; refetch: () => void; session: boolean }) {
+function CadastroInicial({ participantes, grupos, refetch, session }: { participantes: Participante[]; grupos: Grupo[]; refetch: () => void; session: boolean }) {
   const cfgQ = useQuery({
     queryKey: ["configuracoes"],
     enabled: session,
@@ -87,7 +88,7 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
   }
 
   const defaultMes = (mesInicio ? mesInicio.slice(0, 7) : new Date().toISOString().slice(0, 7));
-  const [novoPart, setNovoPart] = useState({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: "" });
+  const [novoPart, setNovoPart] = useState({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: "", grupo_id: "" });
   useEffect(() => { if (!novoPart.mes_inicio) setNovoPart(s => ({ ...s, mes_inicio: defaultMes })); }, [defaultMes]);
   const [filtroMes, setFiltroMes] = useState<string>("__todos");
   const [edits, setEdits] = useState<Record<string, Partial<Participante>>>({});
@@ -147,10 +148,11 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
       imc_inicial: imc,
       circunferencia_inicial: novoPart.circunferencia_inicial ? parseFloat(novoPart.circunferencia_inicial) : null,
       mes_inicio: `${novoPart.mes_inicio}-01`,
+      grupo_id: novoPart.grupo_id || null,
     });
     if (error) { toast.error(error.message); return; }
     toast.success("Participante adicionado.");
-    setNovoPart({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: defaultMes });
+    setNovoPart({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: defaultMes, grupo_id: "" });
     refetch();
   }
 
@@ -209,14 +211,26 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
       {/* Adicionar */}
       <Card className="p-5">
         <h2 className="font-semibold mb-3">Adicionar participante</h2>
-        <div className="grid grid-cols-2 md:grid-cols-7 gap-3 items-end">
+        <div className="grid grid-cols-2 md:grid-cols-8 gap-3 items-end">
           <div className="md:col-span-2"><Label>Nome</Label><Input value={novoPart.nome} onChange={e => setNovoPart({ ...novoPart, nome: e.target.value })} /></div>
           <div><Label>Altura (m)</Label><Input type="number" step="0.01" placeholder="1.70" value={novoPart.altura} onChange={e => setNovoPart({ ...novoPart, altura: e.target.value })} /></div>
           <div><Label>Peso inicial (kg)</Label><Input type="number" step="0.1" value={novoPart.peso_inicial} onChange={e => setNovoPart({ ...novoPart, peso_inicial: e.target.value })} /></div>
           <div><Label>IMC (auto)</Label><Input value={imcPreview} readOnly className="bg-muted" /></div>
           <div><Label>Circ. (cm)</Label><Input type="number" step="0.1" value={novoPart.circunferencia_inicial} onChange={e => setNovoPart({ ...novoPart, circunferencia_inicial: e.target.value })} /></div>
           <div><Label>Mês de início</Label><Input type="month" value={novoPart.mes_inicio} onChange={e => setNovoPart({ ...novoPart, mes_inicio: e.target.value })} /></div>
-          <Button onClick={addParticipante} className="md:col-span-7 md:w-fit"><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
+          <div>
+            <Label>Grupo</Label>
+            <Select value={novoPart.grupo_id || "__none"} onValueChange={(v) => setNovoPart({ ...novoPart, grupo_id: v === "__none" ? "" : v })}>
+              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">— Sem grupo —</SelectItem>
+                {grupos.filter(g => g.ativo).map(g => (
+                  <SelectItem key={g.id} value={g.id}>{g.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={addParticipante} className="md:col-span-8 md:w-fit"><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
         </div>
       </Card>
 
@@ -247,6 +261,7 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
               <tr className="text-left">
                 <th className="px-2 py-2">Nº</th>
                 <th className="px-2 py-2">Nome</th>
+                <th className="px-2 py-2">Grupo</th>
                 <th className="px-2 py-2">Mês início</th>
                 <th className="px-2 py-2">Altura (m)</th>
                 <th className="px-2 py-2">Peso inicial</th>
@@ -266,6 +281,20 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
                 <tr key={p.id} className="border-t">
                   <td className="px-2 py-1">{p.numero}</td>
                   <td className="px-2 py-1"><Input className="h-8 w-48" value={getVal(p, "nome")} onChange={e => setVal(p.id, "nome", e.target.value)} /></td>
+                  <td className="px-2 py-1">
+                    <Select
+                      value={(edits[p.id]?.grupo_id ?? p.grupo_id) || "__none"}
+                      onValueChange={(v) => setVal(p.id, "grupo_id", v === "__none" ? "" : v)}
+                    >
+                      <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">— Sem grupo —</SelectItem>
+                        {grupos.filter(g => g.ativo || g.id === p.grupo_id).map(g => (
+                          <SelectItem key={g.id} value={g.id}>{g.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </td>
                   <td className="px-2 py-1"><Input className="h-8 w-32" type="month" value={typeof miVal === "string" ? miVal.slice(0,7) : ""} onChange={e => setVal(p.id, "mes_inicio", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.01" value={getVal(p, "altura")} onChange={e => setVal(p.id, "altura", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "peso_inicial")} onChange={e => setVal(p.id, "peso_inicial", e.target.value)} /></td>
@@ -282,7 +311,7 @@ function CadastroInicial({ participantes, refetch, session }: { participantes: P
                 );
               })}
               {!participantes.length && (
-                <tr><td colSpan={9} className="text-center text-sm text-muted-foreground py-6">Nenhum participante cadastrado.</td></tr>
+                <tr><td colSpan={10} className="text-center text-sm text-muted-foreground py-6">Nenhum participante cadastrado.</td></tr>
               )}
             </tbody>
           </table>

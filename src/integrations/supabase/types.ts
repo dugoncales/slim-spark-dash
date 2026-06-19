@@ -32,6 +32,33 @@ export type Database = {
         }
         Relationships: []
       }
+      grupos: {
+        Row: {
+          ativo: boolean
+          cor: string | null
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       medicoes: {
         Row: {
           ativ_fisica_dias_semana: number | null
@@ -136,6 +163,7 @@ export type Database = {
           ativo: boolean
           circunferencia_inicial: number | null
           created_at: string
+          grupo_id: string | null
           id: string
           imc_inicial: number
           mes_inicio: string | null
@@ -149,6 +177,7 @@ export type Database = {
           ativo?: boolean
           circunferencia_inicial?: number | null
           created_at?: string
+          grupo_id?: string | null
           id?: string
           imc_inicial: number
           mes_inicio?: string | null
@@ -162,6 +191,7 @@ export type Database = {
           ativo?: boolean
           circunferencia_inicial?: number | null
           created_at?: string
+          grupo_id?: string | null
           id?: string
           imc_inicial?: number
           mes_inicio?: string | null
@@ -170,7 +200,15 @@ export type Database = {
           peso_inicial?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "participantes_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       role_audit_log: {
         Row: {

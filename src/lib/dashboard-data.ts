@@ -10,7 +10,33 @@ export type Participante = {
   circunferencia_inicial: number | null;
   ativo: boolean;
   mes_inicio: string | null;
+  grupo_id: string | null;
 };
+
+export type Grupo = {
+  id: string;
+  nome: string;
+  cor: string | null;
+  ativo: boolean;
+};
+
+/** Sentinela usada no filtro para representar "Sem grupo". */
+export const SEM_GRUPO = "__sem_grupo__";
+
+/**
+ * Aplica o filtro de grupos a uma lista de participantes.
+ * `grupoIds` vazio/null = sem filtro. Inclua `SEM_GRUPO` para casar `grupo_id === null`.
+ */
+export function aplicarFiltroGrupos<T extends { grupo_id: string | null }>(
+  parts: T[],
+  grupoIds?: string[] | null,
+): T[] {
+  if (!grupoIds || grupoIds.length === 0) return parts;
+  const set = new Set(grupoIds);
+  return parts.filter((p) =>
+    p.grupo_id == null ? set.has(SEM_GRUPO) : set.has(p.grupo_id),
+  );
+}
 
 export function calcImc(
   peso: number | null | undefined,
@@ -164,13 +190,19 @@ export function formatDoseValue(mg: number): string {
 
 
 export async function fetchAll() {
-  const [p, m] = await Promise.all([
+  const [p, m, g] = await Promise.all([
     supabase.from("participantes").select("*").order("numero"),
     supabase.from("medicoes").select("*").order("mes_referencia"),
+    supabase.from("grupos").select("*").order("nome"),
   ]);
   if (p.error) throw p.error;
   if (m.error) throw m.error;
-  return { participantes: (p.data ?? []) as Participante[], medicoes: (m.data ?? []) as Medicao[] };
+  if (g.error) throw g.error;
+  return {
+    participantes: (p.data ?? []) as Participante[],
+    medicoes: (m.data ?? []) as Medicao[],
+    grupos: (g.data ?? []) as Grupo[],
+  };
 }
 
 export const MESES_PT = [
@@ -223,8 +255,9 @@ export function calcEvolucaoGrupo(
   participantes: Participante[],
   medicoes: Medicao[],
   coorte?: string | null,
+  grupoIds?: string[] | null,
 ): EvolucaoMes[] {
-  const baseParts = coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes;
+  const baseParts = aplicarFiltroGrupos(coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes, grupoIds);
   const ids = new Set(baseParts.map((p) => p.id));
   const inicioById = new Map(baseParts.map((p) => [p.id, p.mes_inicio] as const));
   const mesesSet = new Set<string>();
@@ -350,8 +383,9 @@ export function calcMarcos(
   participantes: Participante[],
   medicoes: Medicao[],
   coorte?: string | null,
+  grupoIds?: string[] | null,
 ): MarcosResumo {
-  const baseParts = coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes;
+  const baseParts = aplicarFiltroGrupos(coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes, grupoIds);
   let atingiram5 = 0,
     atingiram10 = 0,
     somaPct = 0,
@@ -425,8 +459,9 @@ export function calcEvolucaoAtividadeFisica(
   participantes: Participante[],
   medicoes: Medicao[],
   coorte?: string | null,
+  grupoIds?: string[] | null,
 ): EvolucaoAtividadeFisicaMes[] {
-  const baseParts = coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes;
+  const baseParts = aplicarFiltroGrupos(coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes, grupoIds);
   const ids = new Set(baseParts.map((p) => p.id));
   const mesesSet = new Set<string>();
   medicoes.forEach((m) => { if (ids.has(m.participante_id)) mesesSet.add(m.mes_referencia); });
@@ -463,8 +498,9 @@ export function calcEvolucaoNutricao(
   participantes: Participante[],
   medicoes: Medicao[],
   coorte?: string | null,
+  grupoIds?: string[] | null,
 ): EvolucaoNutricaoMes[] {
-  const baseParts = coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes;
+  const baseParts = aplicarFiltroGrupos(coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes, grupoIds);
   const ids = new Set(baseParts.map((p) => p.id));
   const mesesSet = new Set<string>();
   medicoes.forEach((m) => { if (ids.has(m.participante_id)) mesesSet.add(m.mes_referencia); });
@@ -509,8 +545,9 @@ export function calcEvolucaoAderenciaConsultas(
   participantes: Participante[],
   medicoes: Medicao[],
   coorte?: string | null,
+  grupoIds?: string[] | null,
 ): EvolucaoAderenciaConsultasMes[] {
-  const baseParts = coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes;
+  const baseParts = aplicarFiltroGrupos(coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes, grupoIds);
   const ids = new Set(baseParts.map((p) => p.id));
   const mesesSet = new Set<string>();
   medicoes.forEach((m) => { if (ids.has(m.participante_id)) mesesSet.add(m.mes_referencia); });
