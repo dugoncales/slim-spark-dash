@@ -92,6 +92,7 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
           consultas_edfisica: num(r["Consultas Educadora Física"]) ?? num(r["Consultas Educadora Fisica"]) ?? 0,
           observacao: str(r["Observação"] ?? r["Observacao"]),
           grupo: str(r["Grupo"] ?? r["grupo"]),
+          sexo: parseSexo(r["Sexo"] ?? r["sexo"] ?? r["Genero"] ?? r["Gênero"]),
         }));
       if (parsed.length === 0) {
         toast.error("Nenhuma linha válida encontrada. Verifique o formato da planilha.");
