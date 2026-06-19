@@ -523,34 +523,35 @@ function Dashboard() {
         {...sectionExportProps}
       >
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KpiCard
+          <RiscoKpi
             icon={HeartPulse}
             label="Risco médio de angina"
             value={pctFmt1(riscoMedio.riscoAnginaAtualMedio)}
             sub={`${ppFmt1(riscoMedio.deltaAnginaMedio)} vs inicial`}
-            accent={riscoMedio.deltaAnginaMedio < 0 ? "success" : riscoMedio.deltaAnginaMedio > 0 ? "destructive" : "accent"}
+            tone={riscoMedio.deltaAnginaMedio < 0 ? "success" : riscoMedio.deltaAnginaMedio > 0 ? "destructive" : undefined}
           />
-          <KpiCard
+          <RiscoKpi
             icon={HeartPulse}
             label="Risco CV adicional médio"
             value={pctFmt1(riscoMedio.riscoCVAtualMedio)}
             sub={`${ppFmt1(riscoMedio.deltaCVMedio)} vs inicial`}
-            accent={riscoMedio.deltaCVMedio < 0 ? "success" : riscoMedio.deltaCVMedio > 0 ? "destructive" : "accent"}
+            tone={riscoMedio.deltaCVMedio < 0 ? "success" : riscoMedio.deltaCVMedio > 0 ? "destructive" : undefined}
           />
-          <KpiCard
+          <RiscoKpi
             icon={TrendingDown}
             label="Reduziram o risco"
             value={`${fmt(riscoMedio.pctReduziuRisco, 0)}%`}
             sub={`${riscoMedio.detalhes.filter((d) => d.risco.deltaAngina < 0).length} de ${riscoMedio.n}`}
-            accent="success"
+            tone="success"
           />
-          <KpiCard
+          <RiscoKpi
             icon={TrendingUp}
             label="Cintura média acima do limite"
             value={`${fmt(riscoMedio.excessoAtualMedio, 1)} cm`}
             sub="excesso atual"
           />
         </div>
+
 
         {(topReducoes.length > 0 || topAumentos.length > 0) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
