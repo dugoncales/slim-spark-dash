@@ -279,6 +279,7 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
                 <th className="px-2 py-2">Peso inicial</th>
                 <th className="px-2 py-2">IMC inicial</th>
                 <th className="px-2 py-2">Circ. inicial</th>
+                <th className="px-2 py-2">Sexo</th>
                 <th className="px-2 py-2">Ativo</th>
                 <th></th>
               </tr>
