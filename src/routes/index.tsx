@@ -966,6 +966,65 @@ function Dashboard() {
                 </SelectContent>
               </Select>
             )}
+            {grupos.length > 0 && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Layers className="h-4 w-4" />
+                    {grupoSel.length === 0
+                      ? "Todos os grupos"
+                      : grupoSel.length === 1
+                        ? (grupos.find((g) => g.id === grupoSel[0])?.nome ?? (grupoSel[0] === SEM_GRUPO ? "Sem grupo" : "1 grupo"))
+                        : `${grupoSel.length} grupos`}
+                    {grupoSel.length > 0 && (
+                      <Badge variant="secondary" className="ml-1">{grupoSel.length}</Badge>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-64 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">Filtrar grupos</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => setGrupoSel([])}
+                      disabled={grupoSel.length === 0}
+                    >
+                      Limpar
+                    </Button>
+                  </div>
+                  <div className="space-y-2 max-h-72 overflow-y-auto">
+                    {grupos.filter((g) => g.ativo).map((g) => {
+                      const checked = grupoSel.includes(g.id);
+                      return (
+                        <label key={g.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(v) =>
+                              setGrupoSel((prev) => v ? [...prev, g.id] : prev.filter((x) => x !== g.id))
+                            }
+                          />
+                          {g.cor && (
+                            <span className="inline-block w-3 h-3 rounded-sm" style={{ background: g.cor }} />
+                          )}
+                          <span>{g.nome}</span>
+                        </label>
+                      );
+                    })}
+                    <label className="flex items-center gap-2 cursor-pointer text-sm border-t pt-2 mt-2">
+                      <Checkbox
+                        checked={grupoSel.includes(SEM_GRUPO)}
+                        onCheckedChange={(v) =>
+                          setGrupoSel((prev) => v ? [...prev, SEM_GRUPO] : prev.filter((x) => x !== SEM_GRUPO))
+                        }
+                      />
+                      <span className="text-muted-foreground">Sem grupo</span>
+                    </label>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
             <ExportMenu
               rows={exportRows}
               summary={exportSummary}
