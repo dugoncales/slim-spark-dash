@@ -330,6 +330,8 @@ function Dashboard() {
   const pct5 = marcos.total ? (marcos.atingiram5 / marcos.total) * 100 : 0;
   const pct10 = marcos.total ? (marcos.atingiram10 / marcos.total) * 100 : 0;
 
+  const riscoMedio = calcRiscoMedioGrupo(allParticipantes, allMedicoes, coorteAtiva, grupoIdsAtivos);
+
   const exportRows: ExportRow[] = rows.map((r, i) => ({
     nome: displayName(r.p, i),
     pesoInicial: r.p.peso_inicial,
