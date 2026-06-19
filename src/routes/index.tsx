@@ -111,10 +111,15 @@ function Dashboard() {
   useEffect(() => {
     const c = window.localStorage.getItem("coorte");
     if (c) setCoorte(c);
+    const g = window.localStorage.getItem("grupoSel");
+    if (g) { try { setGrupoSel(JSON.parse(g)); } catch { /* ignore */ } }
   }, []);
   useEffect(() => {
     window.localStorage.setItem("coorte", coorte);
   }, [coorte]);
+  useEffect(() => {
+    window.localStorage.setItem("grupoSel", JSON.stringify(grupoSel));
+  }, [grupoSel]);
 
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["dashboard"],
