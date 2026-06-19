@@ -7,9 +7,12 @@ import { useRoles, type AppRole } from "@/hooks/use-roles";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Plus, Trash2, Layers } from "lucide-react";
+import type { Grupo } from "@/lib/dashboard-data";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
