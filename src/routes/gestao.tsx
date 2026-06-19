@@ -51,7 +51,7 @@ function Gestao() {
             <TabsTrigger value="acompanhamento">Acompanhamento mensal</TabsTrigger>
           </TabsList>
           <TabsContent value="cadastro" className="mt-4">
-            <CadastroInicial participantes={participantes} refetch={refetch} session={!!session} />
+            <CadastroInicial participantes={participantes} grupos={grupos} refetch={refetch} session={!!session} />
           </TabsContent>
           <TabsContent value="acompanhamento" className="mt-4">
             <Acompanhamento participantes={participantes} medicoes={medicoes} refetch={refetch} />
