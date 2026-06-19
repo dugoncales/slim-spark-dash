@@ -281,6 +281,20 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
                 <tr key={p.id} className="border-t">
                   <td className="px-2 py-1">{p.numero}</td>
                   <td className="px-2 py-1"><Input className="h-8 w-48" value={getVal(p, "nome")} onChange={e => setVal(p.id, "nome", e.target.value)} /></td>
+                  <td className="px-2 py-1">
+                    <Select
+                      value={(edits[p.id]?.grupo_id ?? p.grupo_id) || "__none"}
+                      onValueChange={(v) => setVal(p.id, "grupo_id", v === "__none" ? "" : v)}
+                    >
+                      <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">— Sem grupo —</SelectItem>
+                        {grupos.filter(g => g.ativo || g.id === p.grupo_id).map(g => (
+                          <SelectItem key={g.id} value={g.id}>{g.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </td>
                   <td className="px-2 py-1"><Input className="h-8 w-32" type="month" value={typeof miVal === "string" ? miVal.slice(0,7) : ""} onChange={e => setVal(p.id, "mes_inicio", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.01" value={getVal(p, "altura")} onChange={e => setVal(p.id, "altura", e.target.value)} /></td>
                   <td className="px-2 py-1"><Input className="h-8 w-20" type="number" step="0.1" value={getVal(p, "peso_inicial")} onChange={e => setVal(p.id, "peso_inicial", e.target.value)} /></td>
@@ -297,7 +311,7 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
                 );
               })}
               {!participantes.length && (
-                <tr><td colSpan={9} className="text-center text-sm text-muted-foreground py-6">Nenhum participante cadastrado.</td></tr>
+                <tr><td colSpan={10} className="text-center text-sm text-muted-foreground py-6">Nenhum participante cadastrado.</td></tr>
               )}
             </tbody>
           </table>
