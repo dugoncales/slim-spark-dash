@@ -157,17 +157,19 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
             imc_inicial: r.imc_inicial,
             circunferencia_inicial: r.circunferencia_inicial,
             grupo_id: grupoId,
+            sexo: r.sexo,
           }).select("id").single();
           if (error) throw error;
           participanteId = data.id;
         } else {
-          // Only overwrite grupo_id when the sheet specifies one (avoid wiping manual assignments).
+          // Only overwrite grupo_id / sexo when the sheet specifies them (avoid wiping manual assignments).
           await supabase.from("participantes").update({
             nome: r.nome,
             peso_inicial: r.peso_inicial,
             imc_inicial: r.imc_inicial,
             circunferencia_inicial: r.circunferencia_inicial,
             ...(grupoId ? { grupo_id: grupoId } : {}),
+            ...(r.sexo ? { sexo: r.sexo } : {}),
           }).eq("id", participanteId);
         }
         let imcMes = r.imc_mes;
