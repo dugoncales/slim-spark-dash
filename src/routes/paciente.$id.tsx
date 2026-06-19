@@ -224,6 +224,10 @@ function PacientePage() {
           />
         </section>
 
+        <RiscoCard risco={risco} sexo={participante.sexo} />
+
+
+
         <Card className="p-5">
           <header className="flex items-center gap-2 mb-3">
             <Activity className="h-4 w-4 text-primary" />
