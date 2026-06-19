@@ -255,6 +255,7 @@ export function calcEvolucaoGrupo(
   participantes: Participante[],
   medicoes: Medicao[],
   coorte?: string | null,
+  grupoIds?: string[] | null,
 ): EvolucaoMes[] {
   const baseParts = aplicarFiltroGrupos(coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes, grupoIds);
   const ids = new Set(baseParts.map((p) => p.id));
@@ -382,6 +383,7 @@ export function calcMarcos(
   participantes: Participante[],
   medicoes: Medicao[],
   coorte?: string | null,
+  grupoIds?: string[] | null,
 ): MarcosResumo {
   const baseParts = aplicarFiltroGrupos(coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes, grupoIds);
   let atingiram5 = 0,
@@ -457,6 +459,7 @@ export function calcEvolucaoAtividadeFisica(
   participantes: Participante[],
   medicoes: Medicao[],
   coorte?: string | null,
+  grupoIds?: string[] | null,
 ): EvolucaoAtividadeFisicaMes[] {
   const baseParts = aplicarFiltroGrupos(coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes, grupoIds);
   const ids = new Set(baseParts.map((p) => p.id));
@@ -495,6 +498,7 @@ export function calcEvolucaoNutricao(
   participantes: Participante[],
   medicoes: Medicao[],
   coorte?: string | null,
+  grupoIds?: string[] | null,
 ): EvolucaoNutricaoMes[] {
   const baseParts = aplicarFiltroGrupos(coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes, grupoIds);
   const ids = new Set(baseParts.map((p) => p.id));
@@ -541,6 +545,7 @@ export function calcEvolucaoAderenciaConsultas(
   participantes: Participante[],
   medicoes: Medicao[],
   coorte?: string | null,
+  grupoIds?: string[] | null,
 ): EvolucaoAderenciaConsultasMes[] {
   const baseParts = aplicarFiltroGrupos(coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes, grupoIds);
   const ids = new Set(baseParts.map((p) => p.id));
