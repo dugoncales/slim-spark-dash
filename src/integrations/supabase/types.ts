@@ -170,6 +170,7 @@ export type Database = {
           nome: string
           numero: number
           peso_inicial: number
+          sexo: Database["public"]["Enums"]["sexo_tipo"] | null
           updated_at: string
         }
         Insert: {
@@ -184,6 +185,7 @@ export type Database = {
           nome: string
           numero: number
           peso_inicial: number
+          sexo?: Database["public"]["Enums"]["sexo_tipo"] | null
           updated_at?: string
         }
         Update: {
@@ -198,6 +200,7 @@ export type Database = {
           nome?: string
           numero?: number
           peso_inicial?: number
+          sexo?: Database["public"]["Enums"]["sexo_tipo"] | null
           updated_at?: string
         }
         Relationships: [
@@ -301,6 +304,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "gestor_saude" | "gestor"
+      sexo_tipo: "masculino" | "feminino"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -429,6 +433,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "gestor_saude", "gestor"],
+      sexo_tipo: ["masculino", "feminino"],
     },
   },
 } as const
