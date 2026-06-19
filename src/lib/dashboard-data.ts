@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
+export type Sexo = "masculino" | "feminino";
+
 export type Participante = {
   id: string;
   numero: number;
@@ -11,7 +13,150 @@ export type Participante = {
   ativo: boolean;
   mes_inicio: string | null;
   grupo_id: string | null;
+  sexo: Sexo | null;
 };
+
+/* ==================== Risco cardiovascular (circunferência abdominal) ==================== */
+
+/** Limites WHO de circunferência abdominal (cm) para risco aumentado. */
+export const LIMITE_CINTURA: Record<Sexo, number> = {
+  masculino: 94,
+  feminino: 80,
+};
+
+/** Aumento relativo do risco de angina por cm acima do limite (composto). */
+export const ANGINA_PER_CM = 0.075;
+
+/** Aumento absoluto do risco cardiovascular por cm acima do limite (média 3-4%). */
+export const CV_PER_CM = 0.035;
+
+/** cm acima do limite WHO. 0 quando sexo ausente ou circunferência ≤ limite. */
+export function calcExcessoCintura(
+  circ: number | null | undefined,
+  sexo: Sexo | null | undefined,
+): number {
+  if (!sexo || circ == null) return 0;
+  return Math.max(0, circ - LIMITE_CINTURA[sexo]);
+}
+
+/** Risco relativo de angina: (1,075)^excesso − 1. */
+export function calcRiscoAngina(excesso: number): number {
+  if (excesso <= 0) return 0;
+  return Math.pow(1 + ANGINA_PER_CM, excesso) - 1;
+}
+
+/** Risco cardiovascular adicional: 3,5% × excesso (em proporção). */
+export function calcRiscoCV(excesso: number): number {
+  if (excesso <= 0) return 0;
+  return CV_PER_CM * excesso;
+}
+
+export type RiscoParticipante = {
+  /** Tem dados suficientes (sexo + alguma circunferência). */
+  computavel: boolean;
+  excessoInicial: number;
+  excessoAtual: number;
+  riscoAnginaInicial: number;
+  riscoAnginaAtual: number;
+  riscoCVInicial: number;
+  riscoCVAtual: number;
+  /** Atual − Inicial (negativo = melhora). */
+  deltaAngina: number;
+  deltaCV: number;
+  deltaCintura: number;
+  circInicial: number | null;
+  circAtual: number | null;
+};
+
+/** Calcula risco para um participante usando circunferência_inicial vs última medição registrada. */
+export function calcRiscoParticipante(
+  p: Participante,
+  medicoes: Medicao[],
+): RiscoParticipante {
+  const circInicial = p.circunferencia_inicial;
+  const ultimas = medicoes
+    .filter((m) => m.participante_id === p.id && m.circunferencia != null)
+    .sort((a, b) => a.mes_referencia.localeCompare(b.mes_referencia));
+  const circAtual = ultimas.length ? ultimas[ultimas.length - 1].circunferencia : circInicial;
+  const computavel = !!p.sexo && (circInicial != null || circAtual != null);
+  const exI = calcExcessoCintura(circInicial, p.sexo);
+  const exA = calcExcessoCintura(circAtual, p.sexo);
+  const ai = calcRiscoAngina(exI);
+  const aa = calcRiscoAngina(exA);
+  const ci = calcRiscoCV(exI);
+  const ca = calcRiscoCV(exA);
+  return {
+    computavel,
+    excessoInicial: exI,
+    excessoAtual: exA,
+    riscoAnginaInicial: ai,
+    riscoAnginaAtual: aa,
+    riscoCVInicial: ci,
+    riscoCVAtual: ca,
+    deltaAngina: aa - ai,
+    deltaCV: ca - ci,
+    deltaCintura: (circAtual ?? 0) - (circInicial ?? 0),
+    circInicial,
+    circAtual,
+  };
+}
+
+export type RiscoMedioGrupo = {
+  /** Participantes com sexo + alguma circunferência. */
+  n: number;
+  /** Participantes sem sexo ou sem circunferência. */
+  semDados: number;
+  riscoAnginaAtualMedio: number;
+  riscoAnginaInicialMedio: number;
+  riscoCVAtualMedio: number;
+  riscoCVInicialMedio: number;
+  deltaAnginaMedio: number;
+  deltaCVMedio: number;
+  excessoAtualMedio: number;
+  /** % de participantes (computáveis) cujo risco caiu. */
+  pctReduziuRisco: number;
+  /** Detalhes por participante para rankings (apenas computáveis). */
+  detalhes: Array<{ participante: Participante; risco: RiscoParticipante }>;
+};
+
+export function calcRiscoMedioGrupo(
+  participantes: Participante[],
+  medicoes: Medicao[],
+  coorte?: string | null,
+  grupoIds?: string[] | null,
+): RiscoMedioGrupo {
+  const baseParts = aplicarFiltroGrupos(
+    coorte ? participantes.filter((p) => p.mes_inicio === coorte) : participantes,
+    grupoIds,
+  );
+  const detalhes: RiscoMedioGrupo["detalhes"] = [];
+  let semDados = 0;
+  baseParts.forEach((p) => {
+    const r = calcRiscoParticipante(p, medicoes);
+    if (!r.computavel) {
+      semDados++;
+      return;
+    }
+    detalhes.push({ participante: p, risco: r });
+  });
+  const n = detalhes.length || 1;
+  const sum = (f: (d: (typeof detalhes)[number]) => number) =>
+    detalhes.reduce((a, d) => a + f(d), 0);
+  const reduziu = detalhes.filter((d) => d.risco.deltaAngina < 0).length;
+  return {
+    n: detalhes.length,
+    semDados,
+    riscoAnginaAtualMedio: sum((d) => d.risco.riscoAnginaAtual) / n,
+    riscoAnginaInicialMedio: sum((d) => d.risco.riscoAnginaInicial) / n,
+    riscoCVAtualMedio: sum((d) => d.risco.riscoCVAtual) / n,
+    riscoCVInicialMedio: sum((d) => d.risco.riscoCVInicial) / n,
+    deltaAnginaMedio: sum((d) => d.risco.deltaAngina) / n,
+    deltaCVMedio: sum((d) => d.risco.deltaCV) / n,
+    excessoAtualMedio: sum((d) => d.risco.excessoAtual) / n,
+    pctReduziuRisco: detalhes.length ? (reduziu / detalhes.length) * 100 : 0,
+    detalhes,
+  };
+}
 
 export type Grupo = {
   id: string;
