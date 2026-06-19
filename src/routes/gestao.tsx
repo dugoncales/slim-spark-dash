@@ -337,7 +337,7 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
                 );
               })}
               {!participantes.length && (
-                <tr><td colSpan={10} className="text-center text-sm text-muted-foreground py-6">Nenhum participante cadastrado.</td></tr>
+                <tr><td colSpan={11} className="text-center text-sm text-muted-foreground py-6">Nenhum participante cadastrado.</td></tr>
               )}
             </tbody>
           </table>
