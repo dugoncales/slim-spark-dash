@@ -261,6 +261,7 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
               <tr className="text-left">
                 <th className="px-2 py-2">Nº</th>
                 <th className="px-2 py-2">Nome</th>
+                <th className="px-2 py-2">Grupo</th>
                 <th className="px-2 py-2">Mês início</th>
                 <th className="px-2 py-2">Altura (m)</th>
                 <th className="px-2 py-2">Peso inicial</th>
