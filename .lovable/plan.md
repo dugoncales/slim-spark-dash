@@ -1,70 +1,66 @@
-## Objetivo
+# Plano de melhorias — análise por grupos
 
-Permitir agrupar participantes (ex.: por empresa) e filtrar o dashboard por um ou mais grupos, mantendo os mesmos indicadores já existentes — recalculados sobre o subconjunto selecionado.
+Entrega das 4 melhorias selecionadas, em ordem de implementação para reaproveitar código entre elas.
 
-## Modelo de dados
+## 1. Coluna "grupo" no upload Excel
 
-Cada participante pertence a **um único grupo** (ou nenhum). Apenas admin gerencia grupos.
+Arquivo: `src/components/dashboard/UploadDialog.tsx`.
 
-Nova tabela `grupos`:
-- `nome` (único, ex.: "Empresa A")
-- `cor` (opcional, hex, para badges nos gráficos futuros)
-- `ativo` (boolean)
+- Aceitar nova coluna opcional **`grupo`** na planilha (nome do grupo, texto).
+- No parser:
+  - Carregar `grupos` ativos uma vez antes do processamento.
+  - Para cada linha com `grupo` preenchido: buscar por nome (case-insensitive). Se não existir, **criar automaticamente** com cor padrão (próxima da paleta) — apenas se o usuário for admin; gestor_saude recebe aviso e a linha é importada sem grupo.
+  - Atribuir `grupo_id` no upsert de `participantes`.
+- Atualizar o modelo de planilha/instruções no diálogo listando a nova coluna como opcional.
+- Relatório final do upload mostra quantos grupos foram criados e quantos participantes foram vinculados.
 
-Alteração em `participantes`:
-- nova coluna `grupo_id uuid` (nullable, FK → `grupos.id`, ON DELETE SET NULL)
+## 2. Dashboard executivo por grupo
 
-RLS:
-- `grupos`: SELECT liberado para qualquer usuário autenticado (necessário para o filtro do dashboard); INSERT/UPDATE/DELETE apenas para `admin` via `has_role`.
-- `participantes`: manter políticas atuais; o campo `grupo_id` é editado pelas mesmas regras atuais de edição de participante.
+Novo arquivo: `src/routes/grupos.tsx` (rota `/grupos`), item no `AppSidebar` para qualquer usuário autenticado.
 
-GRANTs padrão (`authenticated` + `service_role`) na nova tabela.
+Layout: grid de cards, um por grupo ativo + card "Sem grupo".
 
-## Gestão de grupos (admin)
+Cada card mostra:
+- Nome do grupo + bolinha colorida + nº de participantes ativos.
+- KPIs compactos: % atingiu meta de IMC, Δ peso médio, Δ circunferência média, aderência média de consultas (todos no período já filtrado pela coorte selecionada no topo).
+- Mini sparkline de evolução de peso médio.
+- Botão "Ver no dashboard" → navega para `/` com `?grupos=<id>` pré-selecionado.
 
-Nova aba **"Grupos"** em `/admin` (já restrita a admin):
-- Listar grupos com contagem de participantes
-- Criar / renomear / ativar-desativar / excluir grupo
-- Excluir grupo desvincula participantes (não apaga ninguém)
+Reaproveita os cálculos de `dashboard-data.ts` passando `grupoIds: [id]` para cada card. Filtro de coorte (mês de início) também disponível no topo.
 
-## Atribuição de grupo aos participantes
+## 3. Comparação lado a lado de grupos
 
-Na aba **Cadastro inicial** de `/gestao` (gestor_saude e admin):
-- Novo campo `Grupo` (dropdown com grupos ativos + opção "— Sem grupo —") no formulário de cada participante
-- Atualização inline salva via update existente em `participantes`
+No dashboard principal (`src/routes/index.tsx`), quando o filtro de grupos tiver **2+ grupos selecionados**, ativar modo comparação:
 
-Sem alterações no upload Excel nesta entrega (atribuição manual, conforme escolha).
+- Novo toggle "Comparar grupos" ao lado do filtro (default ligado quando 2+ grupos selecionados).
+- Gráficos de evolução (`EvolucaoChart`): renderizar **uma série por grupo** no mesmo gráfico, cada série na cor do grupo. Aplica-se a: peso médio, IMC médio, circunferência, aderência de consultas, atividade física, nutrição.
+- KPIs no topo: mostrar **mini-tabela** com uma linha por grupo (em vez de cards únicos), colunas = mesmas métricas atuais.
+- Quando 0 ou 1 grupo selecionado, mantém visualização atual.
 
-## Filtro no dashboard
+Mudanças técnicas:
+- Adicionar `calcEvolucaoPorGrupo(participantes, medicoes, grupoIds, calcFn)` em `dashboard-data.ts` que retorna `Record<grupoId, EvolucaoPoint[]>`.
+- `EvolucaoChart` aceita prop opcional `series: { id, nome, cor, dados }[]` para multi-série.
 
-No topo de `/` (logo após o seletor de coorte de mês de início), novo **multi-seletor "Grupos"**:
-- Popover com checkboxes listando os grupos ativos + opção "Sem grupo"
-- Padrão: nenhum selecionado = "Todos" (comportamento atual)
-- Badge resumido (ex.: "2 grupos") + botão "Limpar"
+## 4. Exportar relatório filtrado por grupo
 
-Persistência: estado local na URL via search params (`?grupos=id1,id2`), para que filtros sejam compartilháveis e sobrevivam ao recarregar.
+Arquivos: `src/components/dashboard/ExportMenu.tsx` e `ExportSectionsDialog.tsx`.
 
-## Recalcular indicadores
-
-Adicionar parâmetro opcional `grupoIds?: string[] | null` em todas as funções agregadoras de `src/lib/dashboard-data.ts`:
-- `calcEvolucaoGrupo`, `calcMarcos`, `calcEvolucaoAtividadeFisica`, `calcEvolucaoNutricao`, `calcEvolucaoAderenciaConsultas`
-
-Quando `grupoIds` é fornecido e não vazio, filtra `baseParts` adicionalmente por `p.grupo_id ∈ grupoIds` (com `null` representando "sem grupo" quando incluído na seleção). Combina com o filtro de coorte já existente (AND).
-
-`Dashboard` em `src/routes/index.tsx` passa a seleção atual para todas as chamadas e ajusta o título dos KPIs (ex.: "Visão geral — Empresa A, Empresa B") para deixar claro o recorte.
-
-## Migração
-
-1 migration SQL contendo: tabela `grupos` + GRANTs + RLS + políticas, coluna `participantes.grupo_id` + FK, trigger `set_updated_at` em `grupos`.
+- Exportação já existente passa a respeitar o filtro de grupos ativo no dashboard.
+- Cabeçalho do PDF/Excel exportado inclui:
+  - Linha "Grupos: Nome A, Nome B" (ou "Todos" / "Sem grupo").
+  - Linha "Coorte: <mês de início>" (já existente, manter).
+- Nome do arquivo: `relatorio_<grupos-slug>_<data>.pdf` (ex.: `relatorio_empresa-a_2026-06-19.pdf`). Se "Todos", usa `relatorio_geral`.
+- Se modo comparação estiver ativo, o PDF gera **uma seção por grupo** (reusa renderização atual aplicada N vezes) + uma seção "Comparativo" com gráficos multi-série.
 
 ## Detalhes técnicos
 
-- Tipos TS gerados automaticamente após a migration; depois disso, atualizar `Participante` type em `dashboard-data.ts` para incluir `grupo_id: string | null` e adicionar `Grupo` type.
-- O filtro é puramente client-side (já carregamos todos os dados); zero impacto em performance para o volume atual.
-- Cores dos grupos ficam preparadas para uma futura visualização de comparação lado a lado, mas essa visualização **não** entra nesta entrega (você escolheu multi-seleção, não comparação).
+- Sem mudanças de schema: `participantes.grupo_id` e tabela `grupos` já existem da entrega anterior.
+- Sem novas dependências.
+- Reaproveitamento: passos 2, 3 e 4 dependem do parâmetro `grupoIds` já adicionado às funções de `dashboard-data.ts`.
+- Performance: `fetchAll()` já traz `grupos`; cálculos por grupo no card executivo rodam em memória sobre o mesmo dataset.
 
-## Fora do escopo
+## Fora de escopo
 
-- Coluna "grupo" no upload Excel
-- Gráficos comparativos lado a lado por grupo
-- Permissão de gestor_saude para criar grupos (apenas admin, conforme escolhido)
+- Edição de grupo direto a partir do card executivo (continua em `/admin`).
+- Comparação entre coortes diferentes simultaneamente.
+- Agendamento/envio automático de relatórios por email.

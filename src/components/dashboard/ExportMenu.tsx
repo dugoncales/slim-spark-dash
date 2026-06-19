@@ -38,6 +38,10 @@ export type ExportSummary = {
   atingiram5: number;
   atingiram10: number;
   total: number;
+  /** Nome(s) do(s) grupo(s) filtrado(s) — "Todos" se não houver filtro. */
+  gruposLabel?: string;
+  /** Coorte selecionada — "Todas" quando não houver. */
+  coorteLabel?: string;
 };
 
 export const H2C_OPTIONS = {
@@ -133,6 +137,8 @@ export function ExportMenu({
       const resumoAoa: (string | number)[][] = [
         ["Métrica", "Valor"],
         ["Mês de referência", summary.mesLabel],
+        ["Grupos", summary.gruposLabel ?? "Todos"],
+        ["Coorte", summary.coorteLabel ?? "Todas"],
         ["Peso Inicial Médio (kg)", fmt1(summary.pesoIniMed)],
         ["Peso do Mês Médio (kg)", fmt1(summary.pesoMesMed)],
         ["IMC Inicial Médio", fmt1(summary.imcIniMed)],

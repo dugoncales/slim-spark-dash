@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useRoles } from "@/hooks/use-roles";
 
 type ParsedRow = {
   numero: number;
@@ -23,7 +24,10 @@ type ParsedRow = {
   consultas_psico: number;
   consultas_edfisica: number;
   observacao: string | null;
+  grupo: string | null;
 };
+
+const CORES_AUTO = ["#3b82f6", "#f97316", "#10b981", "#a855f7", "#ef4444", "#14b8a6", "#eab308", "#ec4899"];
 
 function num(v: unknown): number | null {
   if (v === null || v === undefined || v === "") return null;
@@ -49,6 +53,7 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
   const [rows, setRows] = useState<ParsedRow[] | null>(null);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { isAdmin } = useRoles();
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -76,6 +81,7 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
           consultas_psico: num(r["Consultas Psicologia"]) ?? 0,
           consultas_edfisica: num(r["Consultas Educadora Física"]) ?? num(r["Consultas Educadora Fisica"]) ?? 0,
           observacao: str(r["Observação"] ?? r["Observacao"]),
+          grupo: str(r["Grupo"] ?? r["grupo"]),
         }));
       if (parsed.length === 0) {
         toast.error("Nenhuma linha válida encontrada. Verifique o formato da planilha.");
@@ -93,11 +99,44 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
     setBusy(true);
     try {
       const mesIso = `${mes}-01`;
-      // Upsert participantes
+
+      // 1) Resolve groups: read existing groups; auto-create missing (admin only).
+      const { data: gruposExistentes } = await supabase.from("grupos").select("id, nome");
+      const grupoIdByNome = new Map<string, string>();
+      (gruposExistentes ?? []).forEach((g) => grupoIdByNome.set(g.nome.toLowerCase(), g.id));
+
+      let gruposCriados = 0;
+      let participantesComGrupo = 0;
+      const nomesUnicos = Array.from(
+        new Set(rows.map((r) => r.grupo).filter((g): g is string => !!g).map((g) => g.toLowerCase())),
+      );
+      if (isAdmin) {
+        let corIdx = grupoIdByNome.size;
+        for (const lower of nomesUnicos) {
+          if (grupoIdByNome.has(lower)) continue;
+          const original = rows.find((r) => r.grupo?.toLowerCase() === lower)?.grupo ?? lower;
+          const cor = CORES_AUTO[corIdx % CORES_AUTO.length];
+          corIdx++;
+          const { data: novo, error: gerr } = await supabase
+            .from("grupos")
+            .insert({ nome: original, cor })
+            .select("id")
+            .single();
+          if (!gerr && novo) {
+            grupoIdByNome.set(lower, novo.id);
+            gruposCriados++;
+          }
+        }
+      }
+
+      // 2) Upsert participantes + medições.
       const { data: existentes } = await supabase.from("participantes").select("id, numero");
       const byNum = new Map((existentes ?? []).map(p => [p.numero, p.id]));
 
       for (const r of rows) {
+        const grupoId = r.grupo ? (grupoIdByNome.get(r.grupo.toLowerCase()) ?? null) : null;
+        if (grupoId) participantesComGrupo++;
+
         let participanteId = byNum.get(r.numero);
         if (!participanteId) {
           const { data, error } = await supabase.from("participantes").insert({
@@ -106,18 +145,20 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
             peso_inicial: r.peso_inicial,
             imc_inicial: r.imc_inicial,
             circunferencia_inicial: r.circunferencia_inicial,
+            grupo_id: grupoId,
           }).select("id").single();
           if (error) throw error;
           participanteId = data.id;
         } else {
+          // Only overwrite grupo_id when the sheet specifies one (avoid wiping manual assignments).
           await supabase.from("participantes").update({
             nome: r.nome,
             peso_inicial: r.peso_inicial,
             imc_inicial: r.imc_inicial,
             circunferencia_inicial: r.circunferencia_inicial,
+            ...(grupoId ? { grupo_id: grupoId } : {}),
           }).eq("id", participanteId);
         }
-        // Se IMC não veio mas temos altura cadastrada, calcula
         let imcMes = r.imc_mes;
         if ((!imcMes || imcMes === 0) && r.peso_mes) {
           const { data: partRow } = await supabase.from("participantes").select("altura").eq("id", participanteId).single();
@@ -139,7 +180,11 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
           observacao: r.observacao,
         }, { onConflict: "participante_id,mes_referencia" });
       }
-      toast.success("Importação concluída.");
+
+      const partes = [`${rows.length} registros importados.`];
+      if (participantesComGrupo) partes.push(`${participantesComGrupo} vinculados a grupos.`);
+      if (gruposCriados) partes.push(`${gruposCriados} grupo(s) criados.`);
+      toast.success(partes.join(" "));
       onSuccess();
       onOpenChange(false);
       setRows(null);
@@ -158,6 +203,7 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
           <DialogTitle>Importar planilha mensal</DialogTitle>
           <DialogDescription>
             Faça upload do arquivo Excel no mesmo formato do modelo. Pessoas novas são adicionadas; já existentes têm a medição do mês atualizada.
+            {" "}Coluna opcional <code className="px-1 rounded bg-muted text-xs">Grupo</code> (nome do grupo) — se o grupo não existir e você for admin, ele é criado automaticamente.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -175,11 +221,11 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
             <div className="max-h-64 overflow-auto rounded-md border bg-muted/30 text-xs">
               <table className="w-full">
                 <thead className="bg-muted sticky top-0">
-                  <tr><th className="p-2 text-left">Nº</th><th className="p-2 text-left">Nome</th><th className="p-2 text-right">Peso ini</th><th className="p-2 text-right">Peso mês</th><th className="p-2 text-right">IMC mês</th></tr>
+                  <tr><th className="p-2 text-left">Nº</th><th className="p-2 text-left">Nome</th><th className="p-2 text-left">Grupo</th><th className="p-2 text-right">Peso ini</th><th className="p-2 text-right">Peso mês</th><th className="p-2 text-right">IMC mês</th></tr>
                 </thead>
                 <tbody>
                   {rows.map(r => (
-                    <tr key={r.numero} className="border-t"><td className="p-2">{r.numero}</td><td className="p-2">{r.nome}</td><td className="p-2 text-right">{r.peso_inicial}</td><td className="p-2 text-right">{r.peso_mes}</td><td className="p-2 text-right">{r.imc_mes}</td></tr>
+                    <tr key={r.numero} className="border-t"><td className="p-2">{r.numero}</td><td className="p-2">{r.nome}</td><td className="p-2 text-muted-foreground">{r.grupo ?? "—"}</td><td className="p-2 text-right">{r.peso_inicial}</td><td className="p-2 text-right">{r.peso_mes}</td><td className="p-2 text-right">{r.imc_mes}</td></tr>
                   ))}
                 </tbody>
               </table>

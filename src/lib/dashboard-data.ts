@@ -288,6 +288,36 @@ export function calcEvolucaoGrupo(
   });
 }
 
+/** Série isolada por grupo (para comparação lado a lado). */
+export type EvolucaoSerieGrupo = {
+  grupoId: string;
+  nome: string;
+  cor: string;
+  dados: EvolucaoMes[];
+};
+
+const CORES_FALLBACK = ["#3b82f6", "#f97316", "#10b981", "#a855f7", "#ef4444", "#14b8a6", "#eab308", "#ec4899"];
+
+export function calcEvolucaoPorGrupo(
+  participantes: Participante[],
+  medicoes: Medicao[],
+  grupos: Grupo[],
+  grupoIds: string[],
+  coorte?: string | null,
+): EvolucaoSerieGrupo[] {
+  return grupoIds.map((gid, i) => {
+    const grupo = grupos.find((g) => g.id === gid);
+    const nome = gid === SEM_GRUPO ? "Sem grupo" : (grupo?.nome ?? "Grupo");
+    const cor = gid === SEM_GRUPO ? "#94a3b8" : (grupo?.cor ?? CORES_FALLBACK[i % CORES_FALLBACK.length]);
+    return {
+      grupoId: gid,
+      nome,
+      cor,
+      dados: calcEvolucaoGrupo(participantes, medicoes, coorte, [gid]),
+    };
+  });
+}
+
 export type MarcosResumo = {
   atingiram5: number;
   atingiram10: number;

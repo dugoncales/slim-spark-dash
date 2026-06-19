@@ -43,6 +43,7 @@ import {
   formatMes,
   mesesDistintosInicio,
   calcEvolucaoGrupo,
+  calcEvolucaoPorGrupo,
   calcMarcos,
   serieParticipante,
   calcEvolucaoAtividadeFisica,
@@ -168,7 +169,18 @@ function Dashboard() {
         setActiveExport(null);
         return;
       }
-      const slug = safeMonthSlug(mesSel ? formatMes(mesSel) : "dashboard");
+      const baseSlug = safeMonthSlug(mesSel ? formatMes(mesSel) : "dashboard");
+      const grupoSlug = grupoSel.length
+        ? "-" + grupoSel
+            .map((gid) => gid === SEM_GRUPO ? "sem-grupo" : (grupos.find((g) => g.id === gid)?.nome ?? ""))
+            .filter(Boolean)
+            .join("_")
+            .toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9_-]+/g, "-")
+            .slice(0, 60)
+        : "";
+      const slug = baseSlug + grupoSlug;
       try {
         const { default: html2canvas } = await import("html2canvas-pro");
         const canvas = await html2canvas(el, H2C_OPTIONS as Parameters<typeof html2canvas>[1]);
@@ -301,6 +313,10 @@ function Dashboard() {
   })();
 
   const evolucao = calcEvolucaoGrupo(allParticipantes, allMedicoes, coorteAtiva, grupoIdsAtivos);
+  const modoComparacao = grupoSel.length >= 2;
+  const evolucaoSeries = modoComparacao
+    ? calcEvolucaoPorGrupo(allParticipantes, allMedicoes, grupos, grupoSel, coorteAtiva)
+    : undefined;
   const evolAtivFisica = calcEvolucaoAtividadeFisica(allParticipantes, allMedicoes, coorteAtiva, grupoIdsAtivos);
   const evolNutricao = calcEvolucaoNutricao(allParticipantes, allMedicoes, coorteAtiva, grupoIdsAtivos);
   const evolAderencia = calcEvolucaoAderenciaConsultas(allParticipantes, allMedicoes, coorteAtiva, grupoIdsAtivos);
@@ -331,6 +347,15 @@ function Dashboard() {
     observacao: r.m.observacao,
   }));
 
+  const gruposLabel =
+    grupoSel.length === 0
+      ? "Todos"
+      : grupoSel
+          .map((gid) =>
+            gid === SEM_GRUPO ? "Sem grupo" : (grupos.find((g) => g.id === gid)?.nome ?? "Grupo"),
+          )
+          .join(", ");
+
   const exportSummary: ExportSummary = {
     mesLabel: mesSel ? formatMes(mesSel) : "",
     pesoIniMed: kpis.pesoIniMed,
@@ -341,6 +366,8 @@ function Dashboard() {
     atingiram5: marcos.atingiram5,
     atingiram10: marcos.atingiram10,
     total: marcos.total,
+    gruposLabel,
+    coorteLabel: coorteAtiva ? formatMes(coorteAtiva) : "Todas",
   };
 
   // Export mode: when activeExport is set, sections collapse / show / hide
@@ -697,12 +724,16 @@ function Dashboard() {
     evolucao.length > 1 ? (
       <CollapsibleSection
         id="evolucao"
-        title="Evolução do grupo ao longo dos meses"
-        subtitle="Médias por mês — apenas pacientes já iniciados"
+        title={modoComparacao ? "Comparação entre grupos" : "Evolução do grupo ao longo dos meses"}
+        subtitle={
+          modoComparacao
+            ? `Peso médio por mês · ${grupoSel.length} grupos selecionados`
+            : "Médias por mês — apenas pacientes já iniciados"
+        }
         icon={LineChartIcon}
         {...sectionExportProps}
       >
-        <EvolucaoChart data={evolucao} />
+        <EvolucaoChart data={evolucao} series={evolucaoSeries} />
       </CollapsibleSection>
     ) : null;
 
@@ -1048,10 +1079,16 @@ function Dashboard() {
                 height={40}
                 className="h-10 w-auto object-contain"
               />
-              <p className="text-xs text-muted-foreground text-right">
-                Acompanhamento de IMC e Peso
-                {mesSel ? ` · ${formatMes(mesSel)}` : ""}
-              </p>
+              <div className="text-xs text-muted-foreground text-right space-y-0.5">
+                <p>
+                  Acompanhamento de IMC e Peso
+                  {mesSel ? ` · ${formatMes(mesSel)}` : ""}
+                </p>
+                <p>
+                  Grupos: <span className="font-medium text-foreground">{gruposLabel}</span>
+                  {" · "}Coorte: <span className="font-medium text-foreground">{coorteAtiva ? formatMes(coorteAtiva) : "Todas"}</span>
+                </p>
+              </div>
             </div>
           )}
 
