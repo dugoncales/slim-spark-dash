@@ -1042,6 +1042,7 @@ function Dashboard() {
   const sectionMap: Record<string, React.ReactNode | null> = {
     kpis: kpisSection,
     marcos: marcosSection,
+    risco: riscoSection,
     tabela: tabelaSection,
     comparacao: comparacaoSection,
     evolucao: evolucaoSection,
