@@ -1263,3 +1263,39 @@ function Dashboard() {
     </div>
   );
 }
+
+function RiscoKpi({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  tone,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  sub?: string;
+  tone?: "success" | "destructive";
+}) {
+  const tint =
+    tone === "success"
+      ? "bg-success/15 text-success"
+      : tone === "destructive"
+        ? "bg-destructive/15 text-destructive"
+        : "bg-primary/10 text-primary";
+  const subColor =
+    tone === "success" ? "text-success" : tone === "destructive" ? "text-destructive" : "text-muted-foreground";
+  return (
+    <Card className="p-4 flex items-start gap-3 shadow-sm">
+      <div className={`h-11 w-11 rounded-lg flex items-center justify-center shrink-0 ${tint}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">{label}</p>
+        <p className="text-2xl font-bold leading-tight">{value}</p>
+        {sub && <p className={`text-[11px] mt-0.5 ${subColor}`}>{sub}</p>}
+      </div>
+    </Card>
+  );
+}
+
