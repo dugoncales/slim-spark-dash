@@ -95,6 +95,7 @@ function Dashboard() {
 
   const [mesSel, setMesSel] = useState<string | null>(null);
   const [coorte, setCoorte] = useState<string>("__all__");
+  const [grupoSel, setGrupoSel] = useState<string[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
 
   // Export flow:
