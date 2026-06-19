@@ -33,6 +33,7 @@ function Gestao() {
 
   const participantes = data?.participantes ?? [];
   const medicoes = data?.medicoes ?? [];
+  const grupos = data?.grupos ?? [];
 
   return (
     <div className="min-h-screen bg-background">
