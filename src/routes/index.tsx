@@ -506,12 +506,15 @@ function Dashboard() {
     `${v < 0 ? "−" : v > 0 ? "+" : ""}${Math.abs(v * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} pp`;
 
   const topReducoes = [...riscoMedio.detalhes]
-    .sort((a, b) => a.risco.deltaAngina - b.risco.deltaAngina)
+    .sort((a, b) => a.risco.deltaMedio - b.risco.deltaMedio)
     .slice(0, 5);
   const topAumentos = [...riscoMedio.detalhes]
-    .sort((a, b) => b.risco.deltaAngina - a.risco.deltaAngina)
-    .filter((d) => d.risco.deltaAngina > 0)
+    .sort((a, b) => b.risco.deltaMedio - a.risco.deltaMedio)
+    .filter((d) => d.risco.deltaMedio > 0)
     .slice(0, 5);
+
+  const faixaFmt1 = (min: number, max: number) =>
+    min === max ? pctFmt1(min) : `${pctFmt1(min)} – ${pctFmt1(max)}`;
 
   const riscoSection =
     riscoMedio.n > 0 ? (
@@ -522,26 +525,22 @@ function Dashboard() {
         icon={HeartPulse}
         {...sectionExportProps}
       >
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <RiscoKpi
             icon={HeartPulse}
-            label="Risco médio de angina"
-            value={pctFmt1(riscoMedio.riscoAnginaAtualMedio)}
-            sub={`${ppFmt1(riscoMedio.deltaAnginaMedio)} vs inicial`}
-            tone={riscoMedio.deltaAnginaMedio < 0 ? "success" : riscoMedio.deltaAnginaMedio > 0 ? "destructive" : undefined}
-          />
-          <RiscoKpi
-            icon={HeartPulse}
-            label="Risco CV adicional médio"
-            value={pctFmt1(riscoMedio.riscoCVAtualMedio)}
-            sub={`${ppFmt1(riscoMedio.deltaCVMedio)} vs inicial`}
-            tone={riscoMedio.deltaCVMedio < 0 ? "success" : riscoMedio.deltaCVMedio > 0 ? "destructive" : undefined}
+            label="Risco CV médio (atual)"
+            value={faixaFmt1(
+              riscoMedio.detalhes.reduce((a, d) => a + d.risco.riscoMinAtual, 0) / (riscoMedio.n || 1),
+              riscoMedio.detalhes.reduce((a, d) => a + d.risco.riscoMaxAtual, 0) / (riscoMedio.n || 1),
+            )}
+            sub={`${ppFmt1(riscoMedio.deltaMedio)} vs inicial (ponto médio)`}
+            tone={riscoMedio.deltaMedio < 0 ? "success" : riscoMedio.deltaMedio > 0 ? "destructive" : undefined}
           />
           <RiscoKpi
             icon={TrendingDown}
             label="Reduziram o risco"
             value={`${fmt(riscoMedio.pctReduziuRisco, 0)}%`}
-            sub={`${riscoMedio.detalhes.filter((d) => d.risco.deltaAngina < 0).length} de ${riscoMedio.n}`}
+            sub={`${riscoMedio.detalhes.filter((d) => d.risco.deltaMedio < 0).length} de ${riscoMedio.n}`}
             tone="success"
           />
           <RiscoKpi
@@ -555,15 +554,15 @@ function Dashboard() {
 
         {(topReducoes.length > 0 || topAumentos.length > 0) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-            {topReducoes.some((d) => d.risco.deltaAngina < 0) && (
+            {topReducoes.some((d) => d.risco.deltaMedio < 0) && (
               <Card className="p-4">
                 <h4 className="text-xs font-semibold mb-3 flex items-center gap-1.5 text-success">
                   <TrendingDown className="h-3.5 w-3.5" />
-                  Top reduções de risco de angina
+                  Top reduções de risco cardiovascular
                 </h4>
                 <ol className="space-y-1.5 text-sm">
                   {topReducoes
-                    .filter((d) => d.risco.deltaAngina < 0)
+                    .filter((d) => d.risco.deltaMedio < 0)
                     .map((d, i) => (
                       <li key={d.participante.id} className="flex items-center justify-between gap-2">
                         <span className="flex items-center gap-2 min-w-0">
@@ -577,7 +576,7 @@ function Dashboard() {
                           </Link>
                         </span>
                         <span className="font-semibold text-success whitespace-nowrap">
-                          {ppFmt1(d.risco.deltaAngina)}
+                          {ppFmt1(d.risco.deltaMedio)}
                         </span>
                       </li>
                     ))}
@@ -604,7 +603,7 @@ function Dashboard() {
                         </Link>
                       </span>
                       <span className="font-semibold text-destructive whitespace-nowrap">
-                        {ppFmt1(d.risco.deltaAngina)}
+                        {ppFmt1(d.risco.deltaMedio)}
                       </span>
                     </li>
                   ))}
@@ -615,11 +614,12 @@ function Dashboard() {
         )}
 
         <p className="text-[10px] text-muted-foreground mt-4 leading-relaxed">
-          Risco de angina = (1,075)<sup>cm acima do limite</sup> − 1 · Risco cardiovascular adicional = 3,5% × cm acima · Limites WHO: 94 cm (H), 80 cm (M).
+          Faixa estimada por excesso de cintura (tabela executiva): +5 cm ⇒ 5–10% · +10 cm ⇒ 10–20% · +15 cm ⇒ 15–30% · +20 cm ⇒ 20–40% · +30 cm ⇒ 35–60% · +40 cm ⇒ 50–100%. Interpolação linear entre pontos. Limites WHO: 94 cm (H), 80 cm (M).
           {riscoMedio.semDados > 0 && ` · ${riscoMedio.semDados} participante(s) sem sexo ou circunferência foram desconsiderados.`}
         </p>
       </CollapsibleSection>
     ) : null;
+
 
 
   const tabelaSubtitle = (
