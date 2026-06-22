@@ -1,71 +1,57 @@
 ## Objetivo
 
-Adicionar análise de **risco de angina** e **risco cardiovascular adicional** com base na circunferência abdominal acima do limite WHO, exibindo risco atual, inicial e variação (melhora/piora) no dashboard geral e na página individual do paciente.
+Substituir as fórmulas atuais de risco (angina 7,5%/cm e CV adicional 3,5%/cm) por uma **única estimativa de risco cardiovascular** baseada na nova tabela executiva, mantendo limites WHO (H 94 cm / M 80 cm) e a comparação inicial × atual já existente.
 
-## Regras de cálculo
+## Nova tabela de referência
 
-**Limites WHO (por sexo):**
-- Homens: 94 cm
-- Mulheres: 80 cm
+| Excesso (cm) | Risco mínimo | Risco máximo |
+|---|---|---|
+| +5  | 5%  | 10% |
+| +10 | 10% | 20% |
+| +15 | 15% | 30% |
+| +20 | 20% | 40% |
+| +30 | 35% | 60% |
+| +40 | 50% | 100% |
 
-**Excesso (cm):** `max(0, circunferencia - limite_sexo)`
-
-**Risco relativo de angina:** `(1,075)^excesso − 1` exibido em %
-Ex.: 5 cm acima ⇒ +43,6%
-
-**Risco cardiovascular adicional:** `3,5% × excesso` (média de 3–4% por cm)
-Ex.: 5 cm acima ⇒ +17,5%
-
-**Variação de risco:** `risco_atual − risco_inicial` (negativo = melhora).
-
-Quando `sexo` não estiver preenchido, o paciente entra como "sem classificação" e fica fora das médias (mostrado contador).
+Regras:
+- `excesso = max(0, circunferencia − limite_sexo)`
+- `riscoMin(excesso)` e `riscoMax(excesso)` por **interpolação linear** entre os pontos da tabela. Abaixo de 5 cm: interpola de (0, 0%) a (5, 5%/10%). Acima de 40 cm: extrapola usando a última inclinação (5%/cm min, 4%/cm max), com teto exibido como "≥ valor".
+- Resultado por participante: faixa `min–max` para inicial e atual; **delta** calculado sobre o ponto médio `(min+max)/2`.
 
 ## Mudanças
 
-### 1. Banco de dados (migração)
-- Adicionar coluna `sexo` em `participantes` (enum `sexo_tipo` ∈ {`masculino`, `feminino`}, nullable).
-- Sem mudanças em `medicoes` (já tem `circunferencia`).
+### 1. `src/lib/dashboard-data.ts`
+- Remover `calcRiscoAngina` e `calcRiscoCV`.
+- Adicionar `RISCO_TABELA` (array de pontos) + `calcRiscoCVFaixa(excesso) → { min, max, medio }`.
+- Atualizar `RiscoParticipante` para:
+  ```
+  { circInicial, circAtual, excessoInicial, excessoAtual, deltaCintura,
+    riscoMinInicial, riscoMaxInicial, riscoMedioInicial,
+    riscoMinAtual,   riscoMaxAtual,   riscoMedioAtual,
+    deltaMedio }   // negativo = melhora
+  ```
+- `calcRiscoMedioGrupo` passa a agregar `riscoMedioAtual`, `deltaMedio`, `% participantes com redução` e `excessoMedio` (remove KPIs separados de angina/CV).
 
-### 2. Camada de dados — `src/lib/dashboard-data.ts`
-Novos helpers puros:
-- `LIMITE_CINTURA = { masculino: 94, feminino: 80 }`
-- `calcExcessoCintura(circ, sexo)` → cm acima do limite (0 se ≤ limite ou sexo nulo)
-- `calcRiscoAngina(excesso)` → `(1.075 ** excesso) - 1`
-- `calcRiscoCV(excesso)` → `0.035 * excesso`
-- `calcRiscoParticipante(p, medicaoAtual)` → `{ inicial, atual, deltaAngina, deltaCV }` usando `circunferencia_inicial` vs última medição
-- `calcRiscoMedioGrupo(participantes, medicoes, filtros)` → médias de risco atual/inicial/delta, % de participantes que reduziram risco
+### 2. `src/components/dashboard/RiscoCard.tsx` (paciente individual)
+- Um único bloco "Risco cardiovascular estimado" mostrando faixa atual `12% – 24%` (em destaque) com a faixa inicial menor ao lado (`de 18% – 36%`).
+- Badge com variação do ponto médio em pp (verde se redução, vermelho se aumento).
+- Badge existente de "− X cm na cintura" e limite WHO mantidos.
+- Nota de rodapé atualizada citando a tabela de referência (sem fórmulas exponenciais).
 
-### 3. Cadastro e upload
-- **`UploadDialog.tsx`**: aceitar coluna opcional `sexo` (`M`/`F`/`Masculino`/`Feminino`), normalizar e gravar em `participantes.sexo`. Atualizar planilha-modelo e instruções.
-- **`gestao.tsx`**: adicionar `<Select>` de sexo no formulário de criação/edição de participante.
+### 3. `src/routes/index.tsx` (dashboard geral)
+- Seção "Risco cardiovascular (circunferência)" passa a ter 3 KPIs (em vez de 4):
+  - Risco CV médio atual (ponto médio) + delta vs inicial
+  - % de participantes com redução de risco
+  - Excesso médio de cintura (cm)
+- Rankings de maiores reduções / aumentos passam a usar `deltaMedio`.
+- Texto metodológico do rodapé atualizado.
 
-### 4. Dashboard geral — `src/routes/index.tsx`
-Nova seção colapsável **"Risco cardiovascular (circunferência)"** com:
-- KPI: Risco de angina médio (atual) + delta vs inicial (verde se ↓, vermelho se ↑)
-- KPI: Risco CV adicional médio (atual) + delta
-- KPI: % de participantes com redução de risco
-- KPI: Excesso médio de cintura (cm acima do limite)
-- Mini-tabela: top 5 maiores reduções e top 5 maiores aumentos
-- Respeita filtros de mês/grupo/cohort já existentes
-- Rodapé com nota metodológica (limites WHO, fórmulas)
-
-### 5. Página individual — `src/routes/paciente.$id.tsx`
-Novo card **"Risco cardiovascular estimado"** acima dos gráficos:
-- Risco de angina inicial → atual, com seta e variação em pp
-- Risco CV adicional inicial → atual, com seta e variação em pp
-- Badge: "Redução de X cm na cintura" ou "Aumento de X cm"
-- Se sexo não preenchido: aviso "Preencha o sexo em /gestao para calcular o risco"
-- Mini-linha do tempo do risco ao longo dos meses (reutiliza `Line` do recharts já em uso)
-
-## Detalhes técnicos
-
-- O ESLint bloqueia mudanças no `client.ts`/`types.ts` gerados; após a migração, o tipo `sexo` aparece automaticamente em `types.ts` regenerado.
-- Cores: usar `--destructive` para risco alto/aumento, `--primary` (verde semântico já existente nos KPIs) para redução. Sem hardcode de hex.
-- Formatação: `Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDigits: 1 })` para taxas; `pp` (pontos percentuais) para variações.
-- Sem novas dependências.
+### 4. `src/components/dashboard/ExportSectionsDialog.tsx`
+- Rótulo da seção mantém-se; remover menções a "angina" / "CV adicional" no texto auxiliar, se houver.
 
 ## Fora do escopo
 
-- Cálculo de risco absoluto de evento (precisa de score validado tipo Framingham).
-- Alertas/notificações por paciente em zona de risco.
-- Edição em lote do campo sexo (será preenchido via upload Excel ou edição individual).
+- Migração de banco (a coluna `sexo` já existe).
+- Mudança nos limites WHO ou no campo sexo.
+- Score absoluto de evento (Framingham etc.).
+- Edição da planilha-modelo de upload.
