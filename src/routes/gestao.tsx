@@ -492,6 +492,10 @@ function Acompanhamento({ participantes, medicoes, grupos, refetch }: { particip
               <SelectContent>{meses.map(m => <SelectItem key={m} value={m}>{formatMes(m)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+          <div>
+            <Label>Filtrar por grupo</Label>
+            <FiltroGrupoSelect value={filtroGrupo} onChange={setFiltroGrupo} grupos={grupos} className="w-[200px] h-10" />
+          </div>
           <div className="border-l h-12 mx-2 hidden md:block" />
           <div><Label>Novo mês</Label><Input type="month" value={novoMes} onChange={e => setNovoMes(e.target.value)} /></div>
           <Button variant="outline" onClick={criarMes}><Plus className="h-4 w-4 mr-1" />Criar / abrir mês</Button>
