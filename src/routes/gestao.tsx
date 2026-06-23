@@ -54,12 +54,33 @@ function Gestao() {
             <CadastroInicial participantes={participantes} grupos={grupos} refetch={refetch} session={!!session} />
           </TabsContent>
           <TabsContent value="acompanhamento" className="mt-4">
-            <Acompanhamento participantes={participantes} medicoes={medicoes} refetch={refetch} />
+            <Acompanhamento participantes={participantes} medicoes={medicoes} grupos={grupos} refetch={refetch} />
           </TabsContent>
         </Tabs>
       </main>
     </div>
   );
+}
+
+function FiltroGrupoSelect({ value, onChange, grupos, className }: { value: string; onChange: (v: string) => void; grupos: Grupo[]; className?: string }) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className={className ?? "w-[180px] h-8"}><SelectValue /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__todos">Todos os grupos</SelectItem>
+        <SelectItem value="__sem">Sem grupo</SelectItem>
+        {grupos.filter(g => g.ativo).map(g => (
+          <SelectItem key={g.id} value={g.id}>{g.nome}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function matchGrupo(p: Participante, filtroGrupo: string): boolean {
+  if (filtroGrupo === "__todos") return true;
+  if (filtroGrupo === "__sem") return !p.grupo_id;
+  return p.grupo_id === filtroGrupo;
 }
 
 /* ============================== CADASTRO INICIAL ============================== */
@@ -91,6 +112,7 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
   const [novoPart, setNovoPart] = useState({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: "", grupo_id: "", sexo: "" });
   useEffect(() => { if (!novoPart.mes_inicio) setNovoPart(s => ({ ...s, mes_inicio: defaultMes })); }, [defaultMes]);
   const [filtroMes, setFiltroMes] = useState<string>("__todos");
+  const [filtroGrupo, setFiltroGrupo] = useState<string>("__todos");
   const [edits, setEdits] = useState<Record<string, Partial<Participante>>>({});
 
   const imcPreview = (() => {
@@ -262,6 +284,8 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
                 ))}
               </SelectContent>
             </Select>
+            <Label className="text-xs ml-2">Filtrar por grupo:</Label>
+            <FiltroGrupoSelect value={filtroGrupo} onChange={setFiltroGrupo} grupos={grupos} />
             <Button onClick={salvarEdicoes} disabled={!Object.keys(edits).length}>
               <Save className="h-4 w-4 mr-1" />Salvar ({Object.keys(edits).length})
             </Button>
@@ -287,6 +311,7 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
             <tbody>
               {participantes
                 .filter(p => filtroMes === "__todos" ? true : filtroMes === "__sem" ? !p.mes_inicio : p.mes_inicio === filtroMes)
+                .filter(p => matchGrupo(p, filtroGrupo))
                 .map(p => {
                 const miEdit = edits[p.id]?.mes_inicio as string | null | undefined;
                 const miVal = miEdit !== undefined ? (miEdit ?? "") : (p.mes_inicio ?? "");
@@ -349,7 +374,8 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
 
 /* ============================== ACOMPANHAMENTO MENSAL ============================== */
 
-function Acompanhamento({ participantes, medicoes, refetch }: { participantes: Participante[]; medicoes: Medicao[]; refetch: () => void }) {
+function Acompanhamento({ participantes, medicoes, grupos, refetch }: { participantes: Participante[]; medicoes: Medicao[]; grupos: Grupo[]; refetch: () => void }) {
+  const [filtroGrupo, setFiltroGrupo] = useState<string>("__todos");
   const meses = useMemo(() => Array.from(new Set(medicoes.map(m => m.mes_referencia))).sort(), [medicoes]);
   const [mesSel, setMesSel] = useState<string>("");
   const [novoMes, setNovoMes] = useState("2026-03");
@@ -466,6 +492,10 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
               <SelectContent>{meses.map(m => <SelectItem key={m} value={m}>{formatMes(m)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+          <div>
+            <Label>Filtrar por grupo</Label>
+            <FiltroGrupoSelect value={filtroGrupo} onChange={setFiltroGrupo} grupos={grupos} className="w-[200px] h-10" />
+          </div>
           <div className="border-l h-12 mx-2 hidden md:block" />
           <div><Label>Novo mês</Label><Input type="month" value={novoMes} onChange={e => setNovoMes(e.target.value)} /></div>
           <Button variant="outline" onClick={criarMes}><Plus className="h-4 w-4 mr-1" />Criar / abrir mês</Button>
@@ -504,6 +534,7 @@ function Acompanhamento({ participantes, medicoes, refetch }: { participantes: P
             <tbody>
               {participantes
                 .filter(p => !p.mes_inicio || p.mes_inicio <= mesSel)
+                .filter(p => matchGrupo(p, filtroGrupo))
                 .map(p => {
                 const isInicio = p.mes_inicio === mesSel;
                 return (
