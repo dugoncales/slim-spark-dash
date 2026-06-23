@@ -374,7 +374,8 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
 
 /* ============================== ACOMPANHAMENTO MENSAL ============================== */
 
-function Acompanhamento({ participantes, medicoes, refetch }: { participantes: Participante[]; medicoes: Medicao[]; refetch: () => void }) {
+function Acompanhamento({ participantes, medicoes, grupos, refetch }: { participantes: Participante[]; medicoes: Medicao[]; grupos: Grupo[]; refetch: () => void }) {
+  const [filtroGrupo, setFiltroGrupo] = useState<string>("__todos");
   const meses = useMemo(() => Array.from(new Set(medicoes.map(m => m.mes_referencia))).sort(), [medicoes]);
   const [mesSel, setMesSel] = useState<string>("");
   const [novoMes, setNovoMes] = useState("2026-03");
