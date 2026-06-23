@@ -54,12 +54,33 @@ function Gestao() {
             <CadastroInicial participantes={participantes} grupos={grupos} refetch={refetch} session={!!session} />
           </TabsContent>
           <TabsContent value="acompanhamento" className="mt-4">
-            <Acompanhamento participantes={participantes} medicoes={medicoes} refetch={refetch} />
+            <Acompanhamento participantes={participantes} medicoes={medicoes} grupos={grupos} refetch={refetch} />
           </TabsContent>
         </Tabs>
       </main>
     </div>
   );
+}
+
+function FiltroGrupoSelect({ value, onChange, grupos, className }: { value: string; onChange: (v: string) => void; grupos: Grupo[]; className?: string }) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className={className ?? "w-[180px] h-8"}><SelectValue /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__todos">Todos os grupos</SelectItem>
+        <SelectItem value="__sem">Sem grupo</SelectItem>
+        {grupos.filter(g => g.ativo).map(g => (
+          <SelectItem key={g.id} value={g.id}>{g.nome}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function matchGrupo(p: Participante, filtroGrupo: string): boolean {
+  if (filtroGrupo === "__todos") return true;
+  if (filtroGrupo === "__sem") return !p.grupo_id;
+  return p.grupo_id === filtroGrupo;
 }
 
 /* ============================== CADASTRO INICIAL ============================== */

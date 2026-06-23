@@ -1,57 +1,28 @@
-## Objetivo
+Adicionar um filtro por grupo (ou "sem grupo") na tela de Gestão, aplicável às duas sub-abas (Cadastro inicial e Acompanhamento mensal), para facilitar o lançamento de dados por grupo.
 
-Substituir as fórmulas atuais de risco (angina 7,5%/cm e CV adicional 3,5%/cm) por uma **única estimativa de risco cardiovascular** baseada na nova tabela executiva, mantendo limites WHO (H 94 cm / M 80 cm) e a comparação inicial × atual já existente.
+## Alterações
 
-## Nova tabela de referência
+### 1. `src/routes/gestao.tsx` — Filtro por grupo em ambas as abas
 
-| Excesso (cm) | Risco mínimo | Risco máximo |
-|---|---|---|
-| +5  | 5%  | 10% |
-| +10 | 10% | 20% |
-| +15 | 15% | 30% |
-| +20 | 20% | 40% |
-| +30 | 35% | 60% |
-| +40 | 50% | 100% |
+- **State global de filtro**: adicionar `filtroGrupo` (string) no componente `Gestao`, com opções:
+  - `"__todos"` — Todos os participantes
+  - `"__sem"` — Sem grupo
+  - `<id_do_grupo>` — cada grupo existente
+- **Passar `filtroGrupo` e `setFiltroGrupo`** para as sub-componentes `CadastroInicial` e `Acompanhamento` como props.
+- **Aba "Cadastro inicial"**:
+  - Aplicar o filtro junto ao filtro de mês de início já existente (`filtroMes`).
+  - A tabela editável exibe apenas participantes que satisfazem ambos os filtros (mês + grupo).
+- **Aba "Acompanhamento mensal"**:
+  - Incluir o filtro na barra de seleção do mês (ao lado de "Mês para editar").
+  - A tabela de acompanhamento exibe apenas participantes do grupo selecionado (mantendo a regra atual de filtrar por `!p.mes_inicio || p.mes_inicio <= mesSel`).
 
-Regras:
-- `excesso = max(0, circunferencia − limite_sexo)`
-- `riscoMin(excesso)` e `riscoMax(excesso)` por **interpolação linear** entre os pontos da tabela. Abaixo de 5 cm: interpola de (0, 0%) a (5, 5%/10%). Acima de 40 cm: extrapola usando a última inclinação (5%/cm min, 4%/cm max), com teto exibido como "≥ valor".
-- Resultado por participante: faixa `min–max` para inicial e atual; **delta** calculado sobre o ponto médio `(min+max)/2`.
-
-## Mudanças
-
-### 1. `src/lib/dashboard-data.ts`
-- Remover `calcRiscoAngina` e `calcRiscoCV`.
-- Adicionar `RISCO_TABELA` (array de pontos) + `calcRiscoCVFaixa(excesso) → { min, max, medio }`.
-- Atualizar `RiscoParticipante` para:
-  ```
-  { circInicial, circAtual, excessoInicial, excessoAtual, deltaCintura,
-    riscoMinInicial, riscoMaxInicial, riscoMedioInicial,
-    riscoMinAtual,   riscoMaxAtual,   riscoMedioAtual,
-    deltaMedio }   // negativo = melhora
-  ```
-- `calcRiscoMedioGrupo` passa a agregar `riscoMedioAtual`, `deltaMedio`, `% participantes com redução` e `excessoMedio` (remove KPIs separados de angina/CV).
-
-### 2. `src/components/dashboard/RiscoCard.tsx` (paciente individual)
-- Um único bloco "Risco cardiovascular estimado" mostrando faixa atual `12% – 24%` (em destaque) com a faixa inicial menor ao lado (`de 18% – 36%`).
-- Badge com variação do ponto médio em pp (verde se redução, vermelho se aumento).
-- Badge existente de "− X cm na cintura" e limite WHO mantidos.
-- Nota de rodapé atualizada citando a tabela de referência (sem fórmulas exponenciais).
-
-### 3. `src/routes/index.tsx` (dashboard geral)
-- Seção "Risco cardiovascular (circunferência)" passa a ter 3 KPIs (em vez de 4):
-  - Risco CV médio atual (ponto médio) + delta vs inicial
-  - % de participantes com redução de risco
-  - Excesso médio de cintura (cm)
-- Rankings de maiores reduções / aumentos passam a usar `deltaMedio`.
-- Texto metodológico do rodapé atualizado.
-
-### 4. `src/components/dashboard/ExportSectionsDialog.tsx`
-- Rótulo da seção mantém-se; remover menções a "angina" / "CV adicional" no texto auxiliar, se houver.
+### UI / UX
+- O filtro será um `Select` do shadcn, posicionado:
+  - Na aba **Cadastro**: ao lado do filtro de mês de início, no cabeçalho da tabela.
+  - Na aba **Acompanhamento**: ao lado do seletor de mês, no topo do card de seleção.
+- Labels: "Filtrar por grupo:" e opções claras como "Todos", "Sem grupo", e o nome de cada grupo cadastrado.
 
 ## Fora do escopo
-
-- Migração de banco (a coluna `sexo` já existe).
-- Mudança nos limites WHO ou no campo sexo.
-- Score absoluto de evento (Framingham etc.).
-- Edição da planilha-modelo de upload.
+- Nenhuma alteração em banco de dados ou migrations.
+- Sem mudança no modelo de upload de Excel nem no dashboard geral/individual.
+- Sem alteração nos KPIs ou cálculos de risco cardiovascular.
