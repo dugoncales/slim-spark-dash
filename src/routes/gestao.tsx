@@ -112,6 +112,7 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
   const [novoPart, setNovoPart] = useState({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: "", grupo_id: "", sexo: "" });
   useEffect(() => { if (!novoPart.mes_inicio) setNovoPart(s => ({ ...s, mes_inicio: defaultMes })); }, [defaultMes]);
   const [filtroMes, setFiltroMes] = useState<string>("__todos");
+  const [filtroGrupo, setFiltroGrupo] = useState<string>("__todos");
   const [edits, setEdits] = useState<Record<string, Partial<Participante>>>({});
 
   const imcPreview = (() => {
