@@ -311,6 +311,7 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
             <tbody>
               {participantes
                 .filter(p => filtroMes === "__todos" ? true : filtroMes === "__sem" ? !p.mes_inicio : p.mes_inicio === filtroMes)
+                .filter(p => matchGrupo(p, filtroGrupo))
                 .map(p => {
                 const miEdit = edits[p.id]?.mes_inicio as string | null | undefined;
                 const miVal = miEdit !== undefined ? (miEdit ?? "") : (p.mes_inicio ?? "");
