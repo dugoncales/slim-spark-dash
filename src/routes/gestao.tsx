@@ -534,6 +534,7 @@ function Acompanhamento({ participantes, medicoes, grupos, refetch }: { particip
             <tbody>
               {participantes
                 .filter(p => !p.mes_inicio || p.mes_inicio <= mesSel)
+                .filter(p => matchGrupo(p, filtroGrupo))
                 .map(p => {
                 const isInicio = p.mes_inicio === mesSel;
                 return (
