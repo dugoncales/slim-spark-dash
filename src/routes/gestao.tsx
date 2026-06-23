@@ -284,6 +284,8 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
                 ))}
               </SelectContent>
             </Select>
+            <Label className="text-xs ml-2">Filtrar por grupo:</Label>
+            <FiltroGrupoSelect value={filtroGrupo} onChange={setFiltroGrupo} grupos={grupos} />
             <Button onClick={salvarEdicoes} disabled={!Object.keys(edits).length}>
               <Save className="h-4 w-4 mr-1" />Salvar ({Object.keys(edits).length})
             </Button>
