@@ -1141,6 +1141,7 @@ function Dashboard() {
     kpis: kpisSection,
     marcos: marcosSection,
     risco: riscoSection,
+    exames: examesSection,
     tabela: tabelaSection,
     comparacao: comparacaoSection,
     evolucao: evolucaoSection,
