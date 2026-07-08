@@ -229,6 +229,9 @@ function PacientePage() {
 
         <RiscoCard risco={risco} sexo={participante.sexo} />
 
+        <ExamesCard exames={exames} sexo={participante.sexo} />
+
+
 
 
         <Card className="p-5">
