@@ -102,6 +102,14 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
           observacao: str(r["Observação"] ?? r["Observacao"]),
           grupo: str(r["Grupo"] ?? r["grupo"]),
           sexo: parseSexo(r["Sexo"] ?? r["sexo"] ?? r["Genero"] ?? r["Gênero"]),
+          glicemia_jejum: num(r["Glicemia jejum"] ?? r["Glicemia"] ?? r["glicemia_jejum"]),
+          hba1c: num(r["HbA1c"] ?? r["Hemoglobina glicada"] ?? r["hba1c"]),
+          colesterol_total: num(r["Colesterol total"] ?? r["Colesterol"] ?? r["colesterol_total"]),
+          hdl: num(r["HDL"] ?? r["hdl"]),
+          ldl: num(r["LDL"] ?? r["ldl"]),
+          triglicerideos: num(r["Triglicerideos"] ?? r["Triglicerídeos"] ?? r["triglicerideos"]),
+          pa_sistolica: num(r["PA sistolica"] ?? r["PA sistólica"] ?? r["Pressao sistolica"] ?? r["pa_sistolica"]),
+          pa_diastolica: num(r["PA diastolica"] ?? r["PA diastólica"] ?? r["Pressao diastolica"] ?? r["pa_diastolica"]),
         }));
       if (parsed.length === 0) {
         toast.error("Nenhuma linha válida encontrada. Verifique o formato da planilha.");
