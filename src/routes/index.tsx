@@ -54,6 +54,7 @@ import {
   aplicarFiltroGrupos,
   SEM_GRUPO,
 } from "@/lib/dashboard-data";
+import { calcExamesGrupo, EXAMES_META, CATEGORIA_LABEL, type ExameCategoria } from "@/lib/exames";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
