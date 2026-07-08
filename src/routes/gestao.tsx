@@ -457,11 +457,12 @@ function Acompanhamento({ participantes, medicoes, grupos, refetch }: { particip
     if (!mesSel) return;
     const toSave = Object.entries(edits);
     if (!toSave.length) { toast.info("Nada para salvar."); return; }
-    const numericFields = new Set([
+    const numericFields = new Set<string>([
       "peso", "imc", "circunferencia",
       "consultas_endocrino", "consultas_nutri", "consultas_psico", "consultas_edfisica",
       "consultas_endocrino_agendadas", "consultas_nutri_agendadas", "consultas_psico_agendadas", "consultas_edfisica_agendadas",
       "ativ_fisica_dias_semana",
+      ...EXAME_KEYS,
     ]);
     const booleanFields = new Set([
       "nutri_reduziu_acucar", "nutri_reduziu_ultraprocessados", "nutri_aumentou_proteina",
