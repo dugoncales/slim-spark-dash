@@ -533,6 +533,7 @@ function Acompanhamento({ participantes, medicoes, grupos, refetch }: { particip
                   </th>
                 ))}
                 <th className="px-2 py-2">Obs</th>
+                <th className="px-2 py-2 text-center" title="Exames laboratoriais (opcional)">Exames</th>
               </tr>
             </thead>
             <tbody>
