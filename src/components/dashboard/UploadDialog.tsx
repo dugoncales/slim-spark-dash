@@ -208,6 +208,14 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
           consultas_psico: r.consultas_psico,
           consultas_edfisica: r.consultas_edfisica,
           observacao: r.observacao,
+          glicemia_jejum: r.glicemia_jejum,
+          hba1c: r.hba1c,
+          colesterol_total: r.colesterol_total,
+          hdl: r.hdl,
+          ldl: r.ldl,
+          triglicerideos: r.triglicerideos,
+          pa_sistolica: r.pa_sistolica,
+          pa_diastolica: r.pa_diastolica,
         }, { onConflict: "participante_id,mes_referencia" });
       }
 
