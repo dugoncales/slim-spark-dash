@@ -658,12 +658,45 @@ function Acompanhamento({ participantes, medicoes, grupos, refetch }: { particip
                     </td>
                   ))}
                   <td className="px-2 py-1"><Input className="h-8 w-48" value={getVal(p, "observacao")} onChange={e => setVal(p.id, "observacao", e.target.value)} /></td>
+                  <td className="px-2 py-1 text-center">
+                    {(() => {
+                      const preenchidos = EXAME_KEYS.filter((k) => getVal(p, k as keyof Medicao) !== "").length;
+                      return (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-1 px-2"
+                          onClick={() => setExamesDialogPart(p)}
+                          title="Exames laboratoriais (glicemia, lipídios, PA)"
+                        >
+                          <FlaskConical className="h-3.5 w-3.5" />
+                          {preenchidos > 0 ? (
+                            <span className="text-[10px] font-semibold">{preenchidos}/8</span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">—</span>
+                          )}
+                        </Button>
+                      );
+                    })()}
+                  </td>
                 </tr>
                 );
               })}
             </tbody>
           </table>
         </Card>
+      )}
+
+      {examesDialogPart && (
+        <ExamesDialog
+          open={!!examesDialogPart}
+          onOpenChange={(v) => { if (!v) setExamesDialogPart(null); }}
+          nome={examesDialogPart.nome}
+          mesLabel={mesSel ? formatMes(mesSel) : ""}
+          getValor={(k: ExameKey) => getVal(examesDialogPart, k as keyof Medicao)}
+          onChange={(k, v) => setVal(examesDialogPart.id, k as keyof Medicao, v)}
+        />
       )}
     </div>
   );
