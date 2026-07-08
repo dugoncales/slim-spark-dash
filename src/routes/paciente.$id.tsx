@@ -45,6 +45,8 @@ import {
 } from "@/lib/dashboard-data";
 import { imcReferenceAreas, ImcBandsLegend } from "@/components/dashboard/ImcReferenceBands";
 import { RiscoCard } from "@/components/dashboard/RiscoCard";
+import { ExamesCard } from "@/components/dashboard/ExamesCard";
+import { calcExamesParticipante } from "@/lib/exames";
 
 export const Route = createFileRoute("/paciente/$id")({
   component: PacientePage,
