@@ -124,6 +124,7 @@ function PacientePage() {
 
   const idealRange = calcPesoIdealRange(participante.altura);
   const risco = calcRiscoParticipante(participante, medicoesOrdenadas);
+  const exames = calcExamesParticipante(participante, medicoesOrdenadas);
 
   const totals = medicoesOrdenadas.reduce(
     (acc, m) => {
