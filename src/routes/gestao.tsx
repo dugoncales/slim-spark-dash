@@ -382,6 +382,7 @@ function Acompanhamento({ participantes, medicoes, grupos, refetch }: { particip
   const [mesSel, setMesSel] = useState<string>("");
   const [novoMes, setNovoMes] = useState("2026-03");
   const [edits, setEdits] = useState<Record<string, Partial<Medicao>>>({});
+  const [examesDialogPart, setExamesDialogPart] = useState<Participante | null>(null);
 
   useEffect(() => { if (meses.length && !mesSel) setMesSel(meses[meses.length - 1]); }, [meses, mesSel]);
 
