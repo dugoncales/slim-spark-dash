@@ -26,6 +26,15 @@ type ParsedRow = {
   observacao: string | null;
   grupo: string | null;
   sexo: "masculino" | "feminino" | null;
+  // Exames laboratoriais (opcionais)
+  glicemia_jejum: number | null;
+  hba1c: number | null;
+  colesterol_total: number | null;
+  hdl: number | null;
+  ldl: number | null;
+  triglicerideos: number | null;
+  pa_sistolica: number | null;
+  pa_diastolica: number | null;
 };
 
 function parseSexo(v: unknown): "masculino" | "feminino" | null {
@@ -93,6 +102,14 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
           observacao: str(r["Observação"] ?? r["Observacao"]),
           grupo: str(r["Grupo"] ?? r["grupo"]),
           sexo: parseSexo(r["Sexo"] ?? r["sexo"] ?? r["Genero"] ?? r["Gênero"]),
+          glicemia_jejum: num(r["Glicemia jejum"] ?? r["Glicemia"] ?? r["glicemia_jejum"]),
+          hba1c: num(r["HbA1c"] ?? r["Hemoglobina glicada"] ?? r["hba1c"]),
+          colesterol_total: num(r["Colesterol total"] ?? r["Colesterol"] ?? r["colesterol_total"]),
+          hdl: num(r["HDL"] ?? r["hdl"]),
+          ldl: num(r["LDL"] ?? r["ldl"]),
+          triglicerideos: num(r["Triglicerideos"] ?? r["Triglicerídeos"] ?? r["triglicerideos"]),
+          pa_sistolica: num(r["PA sistolica"] ?? r["PA sistólica"] ?? r["Pressao sistolica"] ?? r["pa_sistolica"]),
+          pa_diastolica: num(r["PA diastolica"] ?? r["PA diastólica"] ?? r["Pressao diastolica"] ?? r["pa_diastolica"]),
         }));
       if (parsed.length === 0) {
         toast.error("Nenhuma linha válida encontrada. Verifique o formato da planilha.");
@@ -191,6 +208,14 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
           consultas_psico: r.consultas_psico,
           consultas_edfisica: r.consultas_edfisica,
           observacao: r.observacao,
+          glicemia_jejum: r.glicemia_jejum,
+          hba1c: r.hba1c,
+          colesterol_total: r.colesterol_total,
+          hdl: r.hdl,
+          ldl: r.ldl,
+          triglicerideos: r.triglicerideos,
+          pa_sistolica: r.pa_sistolica,
+          pa_diastolica: r.pa_diastolica,
         }, { onConflict: "participante_id,mes_referencia" });
       }
 
@@ -216,7 +241,7 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
           <DialogTitle>Importar planilha mensal</DialogTitle>
           <DialogDescription>
             Faça upload do arquivo Excel no mesmo formato do modelo. Pessoas novas são adicionadas; já existentes têm a medição do mês atualizada.
-            {" "}Colunas opcionais: <code className="px-1 rounded bg-muted text-xs">Grupo</code> (nome do grupo, criado automaticamente se você for admin) e <code className="px-1 rounded bg-muted text-xs">Sexo</code> (M/F — necessário para calcular risco cardiovascular pela circunferência abdominal).
+            {" "}Colunas opcionais: <code className="px-1 rounded bg-muted text-xs">Grupo</code> (nome do grupo, criado automaticamente se você for admin), <code className="px-1 rounded bg-muted text-xs">Sexo</code> (M/F — necessário para calcular risco cardiovascular) e exames laboratoriais: <code className="px-1 rounded bg-muted text-xs">Glicemia jejum</code>, <code className="px-1 rounded bg-muted text-xs">HbA1c</code>, <code className="px-1 rounded bg-muted text-xs">Colesterol total</code>, <code className="px-1 rounded bg-muted text-xs">HDL</code>, <code className="px-1 rounded bg-muted text-xs">LDL</code>, <code className="px-1 rounded bg-muted text-xs">Triglicerideos</code>, <code className="px-1 rounded bg-muted text-xs">PA sistolica</code>, <code className="px-1 rounded bg-muted text-xs">PA diastolica</code>.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

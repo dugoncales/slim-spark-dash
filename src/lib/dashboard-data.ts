@@ -270,6 +270,15 @@ export type Medicao = {
   nutri_controle_porcoes: boolean | null;
   nutri_reduziu_alcool: boolean | null;
   observacao: string | null;
+  // Exames laboratoriais / indicadores secundários (todos opcionais)
+  glicemia_jejum: number | null;
+  hba1c: number | null;
+  colesterol_total: number | null;
+  hdl: number | null;
+  ldl: number | null;
+  triglicerideos: number | null;
+  pa_sistolica: number | null;
+  pa_diastolica: number | null;
 };
 
 /* ==================== Dose do Mounjaro ==================== */

@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { FlaskConical, Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRoles } from "@/hooks/use-roles";
 import { Checkbox } from "@/components/ui/checkbox";
 import { fetchAll, formatMes, calcImc, NUTRI_FIELDS, MEDICAMENTOS, formatDoseValue, type Medicao, type Participante, type Grupo } from "@/lib/dashboard-data";
+import { EXAME_KEYS, type ExameKey } from "@/lib/exames";
+import { ExamesDialog } from "@/components/dashboard/ExamesDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -380,6 +382,7 @@ function Acompanhamento({ participantes, medicoes, grupos, refetch }: { particip
   const [mesSel, setMesSel] = useState<string>("");
   const [novoMes, setNovoMes] = useState("2026-03");
   const [edits, setEdits] = useState<Record<string, Partial<Medicao>>>({});
+  const [examesDialogPart, setExamesDialogPart] = useState<Participante | null>(null);
 
   useEffect(() => { if (meses.length && !mesSel) setMesSel(meses[meses.length - 1]); }, [meses, mesSel]);
 
@@ -454,11 +457,12 @@ function Acompanhamento({ participantes, medicoes, grupos, refetch }: { particip
     if (!mesSel) return;
     const toSave = Object.entries(edits);
     if (!toSave.length) { toast.info("Nada para salvar."); return; }
-    const numericFields = new Set([
+    const numericFields = new Set<string>([
       "peso", "imc", "circunferencia",
       "consultas_endocrino", "consultas_nutri", "consultas_psico", "consultas_edfisica",
       "consultas_endocrino_agendadas", "consultas_nutri_agendadas", "consultas_psico_agendadas", "consultas_edfisica_agendadas",
       "ativ_fisica_dias_semana",
+      ...EXAME_KEYS,
     ]);
     const booleanFields = new Set([
       "nutri_reduziu_acucar", "nutri_reduziu_ultraprocessados", "nutri_aumentou_proteina",
@@ -529,6 +533,7 @@ function Acompanhamento({ participantes, medicoes, grupos, refetch }: { particip
                   </th>
                 ))}
                 <th className="px-2 py-2">Obs</th>
+                <th className="px-2 py-2 text-center" title="Exames laboratoriais (opcional)">Exames</th>
               </tr>
             </thead>
             <tbody>
@@ -653,12 +658,45 @@ function Acompanhamento({ participantes, medicoes, grupos, refetch }: { particip
                     </td>
                   ))}
                   <td className="px-2 py-1"><Input className="h-8 w-48" value={getVal(p, "observacao")} onChange={e => setVal(p.id, "observacao", e.target.value)} /></td>
+                  <td className="px-2 py-1 text-center">
+                    {(() => {
+                      const preenchidos = EXAME_KEYS.filter((k) => getVal(p, k as keyof Medicao) !== "").length;
+                      return (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-1 px-2"
+                          onClick={() => setExamesDialogPart(p)}
+                          title="Exames laboratoriais (glicemia, lipídios, PA)"
+                        >
+                          <FlaskConical className="h-3.5 w-3.5" />
+                          {preenchidos > 0 ? (
+                            <span className="text-[10px] font-semibold">{preenchidos}/8</span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">—</span>
+                          )}
+                        </Button>
+                      );
+                    })()}
+                  </td>
                 </tr>
                 );
               })}
             </tbody>
           </table>
         </Card>
+      )}
+
+      {examesDialogPart && (
+        <ExamesDialog
+          open={!!examesDialogPart}
+          onOpenChange={(v) => { if (!v) setExamesDialogPart(null); }}
+          nome={examesDialogPart.nome}
+          mesLabel={mesSel ? formatMes(mesSel) : ""}
+          getValor={(k: ExameKey) => getVal(examesDialogPart, k as keyof Medicao)}
+          onChange={(k, v) => setVal(examesDialogPart.id, k as keyof Medicao, v)}
+        />
       )}
     </div>
   );

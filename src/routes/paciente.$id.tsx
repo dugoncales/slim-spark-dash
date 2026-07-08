@@ -45,6 +45,8 @@ import {
 } from "@/lib/dashboard-data";
 import { imcReferenceAreas, ImcBandsLegend } from "@/components/dashboard/ImcReferenceBands";
 import { RiscoCard } from "@/components/dashboard/RiscoCard";
+import { ExamesCard } from "@/components/dashboard/ExamesCard";
+import { calcExamesParticipante } from "@/lib/exames";
 
 export const Route = createFileRoute("/paciente/$id")({
   component: PacientePage,
@@ -122,6 +124,7 @@ function PacientePage() {
 
   const idealRange = calcPesoIdealRange(participante.altura);
   const risco = calcRiscoParticipante(participante, medicoesOrdenadas);
+  const exames = calcExamesParticipante(participante, medicoesOrdenadas);
 
   const totals = medicoesOrdenadas.reduce(
     (acc, m) => {
@@ -225,6 +228,9 @@ function PacientePage() {
         </section>
 
         <RiscoCard risco={risco} sexo={participante.sexo} />
+
+        <ExamesCard exames={exames} sexo={participante.sexo} />
+
 
 
 

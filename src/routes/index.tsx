@@ -21,6 +21,7 @@ import {
   ChevronRight,
   MousePointer2,
   HeartPulse,
+  FlaskConical,
 } from "lucide-react";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -53,6 +54,7 @@ import {
   aplicarFiltroGrupos,
   SEM_GRUPO,
 } from "@/lib/dashboard-data";
+import { calcExamesGrupo, EXAMES_META, CATEGORIA_LABEL, type ExameCategoria } from "@/lib/exames";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -331,6 +333,7 @@ function Dashboard() {
   const pct10 = marcos.total ? (marcos.atingiram10 / marcos.total) * 100 : 0;
 
   const riscoMedio = calcRiscoMedioGrupo(allParticipantes, allMedicoes, coorteAtiva, grupoIdsAtivos);
+  const examesGrupo = calcExamesGrupo(participantes, allMedicoes);
 
   const exportRows: ExportRow[] = rows.map((r, i) => ({
     nome: displayName(r.p, i),
@@ -619,6 +622,101 @@ function Dashboard() {
         </p>
       </CollapsibleSection>
     ) : null;
+
+  /* ==================== Indicadores secundários (exames laboratoriais) ==================== */
+
+  const examesTopMelhora = [...examesGrupo.detalhes]
+    .filter((d) => d.scoreMelhora > 0)
+    .sort((a, b) => b.scoreMelhora - a.scoreMelhora || a.scorePiora - b.scorePiora)
+    .slice(0, 5);
+
+  const CATEGORIA_ICON: Record<ExameCategoria, string> = {
+    glicemico: "🩸",
+    lipidico: "🫀",
+    pressao: "💧",
+  };
+
+  const examesSection =
+    examesGrupo.cobertura > 0 ? (
+      <CollapsibleSection
+        id="exames"
+        title="Indicadores secundários (exames laboratoriais)"
+        subtitle={`${examesGrupo.cobertura} de ${examesGrupo.totalParticipantes} participantes com ≥1 exame registrado`}
+        icon={FlaskConical}
+        {...sectionExportProps}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {(["glicemico", "lipidico", "pressao"] as ExameCategoria[]).map((cat) => {
+            const r = examesGrupo.porCategoria[cat];
+            return (
+              <Card key={cat} className="p-4 flex items-start gap-3 shadow-sm">
+                <div className="h-11 w-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xl">
+                  <span aria-hidden="true">{CATEGORIA_ICON[cat]}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">
+                    {CATEGORIA_LABEL[cat]}
+                  </p>
+                  <p className="text-2xl font-bold leading-tight">
+                    {r.avaliaveis > 0 ? `${fmt(r.pctMelhora, 0)}%` : "—"}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {r.avaliaveis > 0
+                      ? `${r.melhoraram} de ${r.avaliaveis} melhoraram${r.pioraram ? ` · ${r.pioraram} pioraram` : ""}`
+                      : "Sem dados suficientes (≥2 medições)"}
+                  </p>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+
+        {examesTopMelhora.length > 0 && (
+          <div className="mt-5">
+            <h4 className="text-xs font-semibold mb-3 flex items-center gap-1.5 text-success">
+              <FlaskConical className="h-3.5 w-3.5" />
+              Top melhorias em exames laboratoriais
+            </h4>
+            <ol className="space-y-1.5 text-sm">
+              {examesTopMelhora.map((d, i) => {
+                const melhorias = EXAMES_META
+                  .filter((m) => d.exames.porExame[m.key].melhora === "melhorou")
+                  .map((m) => m.short)
+                  .join(" · ");
+                return (
+                  <li key={d.participante.id} className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="text-success font-bold w-5">{i + 1}º</span>
+                      <Link
+                        to="/paciente/$id"
+                        params={{ id: d.participante.id }}
+                        className="truncate text-primary hover:underline"
+                      >
+                        {mostrarNomes ? d.participante.nome : `Pessoa ${d.participante.numero}`}
+                      </Link>
+                      <span className="text-[11px] text-muted-foreground truncate hidden md:inline">
+                        {melhorias}
+                      </span>
+                    </span>
+                    <span className="font-semibold text-success whitespace-nowrap">
+                      {d.scoreMelhora} indicador{d.scoreMelhora > 1 ? "es" : ""}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        )}
+
+        <p className="text-[10px] text-muted-foreground mt-4 leading-relaxed border-t pt-3">
+          Considera apenas participantes com ≥2 medições no indicador. Critério de melhora combinado:
+          saída de faixa alterada <strong>ou</strong> redução clinicamente relevante (Glicemia −10 mg/dL ·
+          HbA1c −0,5 pp · Colesterol/LDL −10% · Triglicerídeos −15% · HDL +5 mg/dL · PA −5 mmHg).
+        </p>
+      </CollapsibleSection>
+    ) : null;
+
+
 
 
 
@@ -1043,6 +1141,7 @@ function Dashboard() {
     kpis: kpisSection,
     marcos: marcosSection,
     risco: riscoSection,
+    exames: examesSection,
     tabela: tabelaSection,
     comparacao: comparacaoSection,
     evolucao: evolucaoSection,
@@ -1242,6 +1341,7 @@ function Dashboard() {
               {kpisSection}
               {marcosSection}
               {riscoSection}
+              {examesSection}
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] gap-6 items-start">
                 <div className="min-w-0">{tabelaSection}</div>
                 <div className="space-y-6">

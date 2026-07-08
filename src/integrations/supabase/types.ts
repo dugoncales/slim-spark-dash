@@ -64,6 +64,7 @@ export type Database = {
           ativ_fisica_dias_semana: number | null
           ativ_fisica_intensidade: string | null
           circunferencia: number | null
+          colesterol_total: number | null
           consultas_edfisica: number | null
           consultas_edfisica_agendadas: number | null
           consultas_endocrino: number | null
@@ -74,8 +75,12 @@ export type Database = {
           consultas_psico_agendadas: number | null
           created_at: string
           dose: string | null
+          glicemia_jejum: number | null
+          hba1c: number | null
+          hdl: number | null
           id: string
           imc: number | null
+          ldl: number | null
           medicamento: string | null
           mes_referencia: string
           nutri_aumentou_proteina: boolean | null
@@ -85,14 +90,18 @@ export type Database = {
           nutri_reduziu_alcool: boolean | null
           nutri_reduziu_ultraprocessados: boolean | null
           observacao: string | null
+          pa_diastolica: number | null
+          pa_sistolica: number | null
           participante_id: string
           peso: number | null
+          triglicerideos: number | null
           updated_at: string
         }
         Insert: {
           ativ_fisica_dias_semana?: number | null
           ativ_fisica_intensidade?: string | null
           circunferencia?: number | null
+          colesterol_total?: number | null
           consultas_edfisica?: number | null
           consultas_edfisica_agendadas?: number | null
           consultas_endocrino?: number | null
@@ -103,8 +112,12 @@ export type Database = {
           consultas_psico_agendadas?: number | null
           created_at?: string
           dose?: string | null
+          glicemia_jejum?: number | null
+          hba1c?: number | null
+          hdl?: number | null
           id?: string
           imc?: number | null
+          ldl?: number | null
           medicamento?: string | null
           mes_referencia: string
           nutri_aumentou_proteina?: boolean | null
@@ -114,14 +127,18 @@ export type Database = {
           nutri_reduziu_alcool?: boolean | null
           nutri_reduziu_ultraprocessados?: boolean | null
           observacao?: string | null
+          pa_diastolica?: number | null
+          pa_sistolica?: number | null
           participante_id: string
           peso?: number | null
+          triglicerideos?: number | null
           updated_at?: string
         }
         Update: {
           ativ_fisica_dias_semana?: number | null
           ativ_fisica_intensidade?: string | null
           circunferencia?: number | null
+          colesterol_total?: number | null
           consultas_edfisica?: number | null
           consultas_edfisica_agendadas?: number | null
           consultas_endocrino?: number | null
@@ -132,8 +149,12 @@ export type Database = {
           consultas_psico_agendadas?: number | null
           created_at?: string
           dose?: string | null
+          glicemia_jejum?: number | null
+          hba1c?: number | null
+          hdl?: number | null
           id?: string
           imc?: number | null
+          ldl?: number | null
           medicamento?: string | null
           mes_referencia?: string
           nutri_aumentou_proteina?: boolean | null
@@ -143,8 +164,11 @@ export type Database = {
           nutri_reduziu_alcool?: boolean | null
           nutri_reduziu_ultraprocessados?: boolean | null
           observacao?: string | null
+          pa_diastolica?: number | null
+          pa_sistolica?: number | null
           participante_id?: string
           peso?: number | null
+          triglicerideos?: number | null
           updated_at?: string
         }
         Relationships: [
