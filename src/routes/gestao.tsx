@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { FlaskConical, Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRoles } from "@/hooks/use-roles";
 import { Checkbox } from "@/components/ui/checkbox";
 import { fetchAll, formatMes, calcImc, NUTRI_FIELDS, MEDICAMENTOS, formatDoseValue, type Medicao, type Participante, type Grupo } from "@/lib/dashboard-data";
+import { EXAME_KEYS, type ExameKey } from "@/lib/exames";
+import { ExamesDialog } from "@/components/dashboard/ExamesDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
