@@ -333,6 +333,7 @@ function Dashboard() {
   const pct10 = marcos.total ? (marcos.atingiram10 / marcos.total) * 100 : 0;
 
   const riscoMedio = calcRiscoMedioGrupo(allParticipantes, allMedicoes, coorteAtiva, grupoIdsAtivos);
+  const examesGrupo = calcExamesGrupo(participantes, allMedicoes);
 
   const exportRows: ExportRow[] = rows.map((r, i) => ({
     nome: displayName(r.p, i),
