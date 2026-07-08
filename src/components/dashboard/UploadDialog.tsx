@@ -241,7 +241,7 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: {
           <DialogTitle>Importar planilha mensal</DialogTitle>
           <DialogDescription>
             Faça upload do arquivo Excel no mesmo formato do modelo. Pessoas novas são adicionadas; já existentes têm a medição do mês atualizada.
-            {" "}Colunas opcionais: <code className="px-1 rounded bg-muted text-xs">Grupo</code> (nome do grupo, criado automaticamente se você for admin) e <code className="px-1 rounded bg-muted text-xs">Sexo</code> (M/F — necessário para calcular risco cardiovascular pela circunferência abdominal).
+            {" "}Colunas opcionais: <code className="px-1 rounded bg-muted text-xs">Grupo</code> (nome do grupo, criado automaticamente se você for admin), <code className="px-1 rounded bg-muted text-xs">Sexo</code> (M/F — necessário para calcular risco cardiovascular) e exames laboratoriais: <code className="px-1 rounded bg-muted text-xs">Glicemia jejum</code>, <code className="px-1 rounded bg-muted text-xs">HbA1c</code>, <code className="px-1 rounded bg-muted text-xs">Colesterol total</code>, <code className="px-1 rounded bg-muted text-xs">HDL</code>, <code className="px-1 rounded bg-muted text-xs">LDL</code>, <code className="px-1 rounded bg-muted text-xs">Triglicerideos</code>, <code className="px-1 rounded bg-muted text-xs">PA sistolica</code>, <code className="px-1 rounded bg-muted text-xs">PA diastolica</code>.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
