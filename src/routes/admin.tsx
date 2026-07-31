@@ -173,12 +173,20 @@ function AdminPage() {
                   <TableCell className="text-xs">{new Date(l.created_at).toLocaleString("pt-BR")}</TableCell>
                   <TableCell>{l.changed_by_email ?? "—"}</TableCell>
                   <TableCell>
-                    <span className={l.action === "granted" ? "text-green-600" : "text-red-600"}>
-                      {l.action === "granted" ? "Concedeu" : "Removeu"}
-                    </span>
+                    {(() => {
+                      const isGrant = l.action === "granted" || l.action.startsWith("grupo_granted");
+                      const isGrupo = l.action.startsWith("grupo_");
+                      return (
+                        <span className={isGrant ? "text-green-600" : "text-red-600"}>
+                          {isGrant ? "Concedeu" : "Removeu"}
+                          {isGrupo ? " acesso a grupo" : ""}
+                        </span>
+                      );
+                    })()}
                   </TableCell>
-                  <TableCell>{l.role}</TableCell>
+                  <TableCell>{l.action.startsWith("grupo_") ? "—" : l.role}</TableCell>
                   <TableCell>{l.target_email ?? "—"}</TableCell>
+
                 </TableRow>
               ))}
               {!logsQ.data?.length && (
