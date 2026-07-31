@@ -270,6 +270,35 @@ export type Database = {
         }
         Relationships: []
       }
+      user_grupos: {
+        Row: {
+          created_at: string
+          grupo_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          grupo_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          grupo_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_grupos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -296,6 +325,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_participante: {
+        Args: { _grupo_id: string; _user_id: string }
+        Returns: boolean
+      }
+      grant_user_grupo: {
+        Args: { _grupo_id: string; _target_user_id: string }
+        Returns: undefined
+      }
       grant_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -310,6 +347,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_user_grupos: {
+        Args: never
+        Returns: {
+          grupo_id: string
+          user_id: string
+        }[]
+      }
       list_users_with_roles: {
         Args: never
         Returns: {
@@ -318,12 +362,21 @@ export type Database = {
           user_id: string
         }[]
       }
+      revoke_user_grupo: {
+        Args: { _grupo_id: string; _target_user_id: string }
+        Returns: undefined
+      }
       revoke_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _target_user_id: string
         }
         Returns: undefined
+      }
+      user_grupo_ids: { Args: { _user_id: string }; Returns: string[] }
+      user_has_grupo: {
+        Args: { _grupo_id: string; _user_id: string }
+        Returns: boolean
       }
     }
     Enums: {
