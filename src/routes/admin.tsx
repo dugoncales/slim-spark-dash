@@ -331,3 +331,120 @@ function GruposAdmin() {
     </Card>
   );
 }
+
+/* ========================== ACESSO POR GRUPO ========================== */
+
+function AcessoPorGrupo({ users, onChanged }: { users: UserRow[]; onChanged: () => void }) {
+  const gruposQ = useQuery({
+    queryKey: ["admin-grupos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("grupos").select("*").order("nome");
+      if (error) throw error;
+      return (data ?? []) as Grupo[];
+    },
+  });
+  const acessosQ = useQuery({
+    queryKey: ["admin-user-grupos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("list_user_grupos");
+      if (error) throw error;
+      return (data ?? []) as { user_id: string; grupo_id: string }[];
+    },
+  });
+
+  const [busy, setBusy] = useState<string | null>(null);
+  const grupos = (gruposQ.data ?? []).filter((g) => g.ativo);
+  const acessos = acessosQ.data ?? [];
+
+  async function toggle(u: UserRow, grupoId: string, hasIt: boolean) {
+    setBusy(u.user_id + grupoId);
+    try {
+      const { error } = await supabase.rpc(hasIt ? "revoke_user_grupo" : "grant_user_grupo", {
+        _target_user_id: u.user_id,
+        _grupo_id: grupoId,
+      });
+      if (error) throw error;
+      toast.success(hasIt ? "Acesso removido." : "Acesso concedido.");
+      acessosQ.refetch();
+      onChanged();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Layers className="h-4 w-4 text-primary" />
+        <h2 className="font-semibold">Acesso por grupo</h2>
+      </div>
+      <p className="text-xs text-muted-foreground mb-3">
+        Administradores acessam todos os grupos. Gestores e gestores da saúde acessam apenas os
+        grupos marcados abaixo — participantes sem grupo ficam visíveis somente para administradores.
+      </p>
+
+      {!grupos.length ? (
+        <p className="text-sm text-muted-foreground py-2">Crie um grupo para atribuir acessos.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>E-mail</TableHead>
+                {grupos.map((g) => (
+                  <TableHead key={g.id} className="text-center whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1">
+                      <span
+                        className="inline-block w-2.5 h-2.5 rounded-sm"
+                        style={{ background: g.cor ?? "#94a3b8" }}
+                      />
+                      {g.nome}
+                    </span>
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((u) => {
+                const isAdminUser = u.roles?.includes("admin");
+                return (
+                  <TableRow key={u.user_id}>
+                    <TableCell className="font-medium">
+                      {u.email}
+                      {isAdminUser && (
+                        <span className="ml-2 text-[10px] text-muted-foreground">(acesso total)</span>
+                      )}
+                    </TableCell>
+                    {grupos.map((g) => {
+                      const hasIt = acessos.some(
+                        (a) => a.user_id === u.user_id && a.grupo_id === g.id,
+                      );
+                      return (
+                        <TableCell key={g.id} className="text-center">
+                          <Checkbox
+                            checked={isAdminUser ? true : hasIt}
+                            disabled={isAdminUser || busy === u.user_id + g.id}
+                            onCheckedChange={() => toggle(u, g.id, hasIt)}
+                          />
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                );
+              })}
+              {!users.length && (
+                <TableRow>
+                  <TableCell colSpan={grupos.length + 1} className="text-center text-sm text-muted-foreground py-4">
+                    Nenhum usuário.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </Card>
+  );
+}
