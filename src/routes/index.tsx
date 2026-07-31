@@ -251,6 +251,20 @@ function Dashboard() {
     );
   }
 
+  if (semAcesso) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-6">
+        <div className="max-w-md text-center">
+          <h1 className="text-lg font-semibold">Nenhum grupo atribuído</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Seu usuário ainda não tem acesso a nenhum grupo de análise. Peça a um administrador para
+            liberar o acesso em Administração › Acesso por grupo.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const allParticipantes = data?.participantes ?? [];
   const allMedicoes = data?.medicoes ?? [];
   const grupos = data?.grupos ?? [];

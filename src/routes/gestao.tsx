@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/use-auth";
 import { useRoles } from "@/hooks/use-roles";
+import { useGruposPermitidos } from "@/hooks/use-grupos-permitidos";
 import { Checkbox } from "@/components/ui/checkbox";
 import { fetchAll, formatMes, calcImc, NUTRI_FIELDS, MEDICAMENTOS, formatDoseValue, type Medicao, type Participante, type Grupo } from "@/lib/dashboard-data";
 import { EXAME_KEYS, type ExameKey } from "@/lib/exames";
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/gestao")({
 function Gestao() {
   const { session, loading } = useAuth();
   const { isGestorSaude, loading: rolesLoading } = useRoles();
+  const { isGlobal, semAcesso } = useGruposPermitidos();
   const navigate = useNavigate();
   useEffect(() => { if (!loading && !session) navigate({ to: "/login" }); }, [loading, session, navigate]);
   useEffect(() => { if (!rolesLoading && session && !isGestorSaude) navigate({ to: "/" }); }, [rolesLoading, isGestorSaude, session, navigate]);
@@ -36,6 +38,20 @@ function Gestao() {
   const participantes = data?.participantes ?? [];
   const medicoes = data?.medicoes ?? [];
   const grupos = data?.grupos ?? [];
+
+  if (semAcesso) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6">
+        <div className="max-w-md text-center">
+          <h1 className="text-lg font-semibold">Nenhum grupo atribuído</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Seu usuário ainda não tem acesso a nenhum grupo de análise. Peça a um administrador para
+            liberar o acesso em Administração › Acesso por grupo.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,10 +69,10 @@ function Gestao() {
             <TabsTrigger value="acompanhamento">Acompanhamento mensal</TabsTrigger>
           </TabsList>
           <TabsContent value="cadastro" className="mt-4">
-            <CadastroInicial participantes={participantes} grupos={grupos} refetch={refetch} session={!!session} />
+            <CadastroInicial participantes={participantes} grupos={grupos} refetch={refetch} session={!!session} isGlobal={isGlobal} />
           </TabsContent>
           <TabsContent value="acompanhamento" className="mt-4">
-            <Acompanhamento participantes={participantes} medicoes={medicoes} grupos={grupos} refetch={refetch} />
+            <Acompanhamento participantes={participantes} medicoes={medicoes} grupos={grupos} refetch={refetch} isGlobal={isGlobal} />
           </TabsContent>
         </Tabs>
       </main>
@@ -64,13 +80,13 @@ function Gestao() {
   );
 }
 
-function FiltroGrupoSelect({ value, onChange, grupos, className }: { value: string; onChange: (v: string) => void; grupos: Grupo[]; className?: string }) {
+function FiltroGrupoSelect({ value, onChange, grupos, className, isGlobal = true }: { value: string; onChange: (v: string) => void; grupos: Grupo[]; className?: string; isGlobal?: boolean }) {
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className={className ?? "w-[180px] h-8"}><SelectValue /></SelectTrigger>
       <SelectContent>
         <SelectItem value="__todos">Todos os grupos</SelectItem>
-        <SelectItem value="__sem">Sem grupo</SelectItem>
+        {isGlobal && <SelectItem value="__sem">Sem grupo</SelectItem>}
         {grupos.filter(g => g.ativo).map(g => (
           <SelectItem key={g.id} value={g.id}>{g.nome}</SelectItem>
         ))}
@@ -87,7 +103,7 @@ function matchGrupo(p: Participante, filtroGrupo: string): boolean {
 
 /* ============================== CADASTRO INICIAL ============================== */
 
-function CadastroInicial({ participantes, grupos, refetch, session }: { participantes: Participante[]; grupos: Grupo[]; refetch: () => void; session: boolean }) {
+function CadastroInicial({ participantes, grupos, refetch, session, isGlobal }: { participantes: Participante[]; grupos: Grupo[]; refetch: () => void; session: boolean; isGlobal: boolean }) {
   const cfgQ = useQuery({
     queryKey: ["configuracoes"],
     enabled: session,
@@ -248,7 +264,7 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
             <Select value={novoPart.grupo_id || "__none"} onValueChange={(v) => setNovoPart({ ...novoPart, grupo_id: v === "__none" ? "" : v })}>
               <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none">— Sem grupo —</SelectItem>
+                {isGlobal && <SelectItem value="__none">— Sem grupo —</SelectItem>}
                 {grupos.filter(g => g.ativo).map(g => (
                   <SelectItem key={g.id} value={g.id}>{g.nome}</SelectItem>
                 ))}
@@ -287,7 +303,7 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
               </SelectContent>
             </Select>
             <Label className="text-xs ml-2">Filtrar por grupo:</Label>
-            <FiltroGrupoSelect value={filtroGrupo} onChange={setFiltroGrupo} grupos={grupos} />
+            <FiltroGrupoSelect value={filtroGrupo} onChange={setFiltroGrupo} grupos={grupos} isGlobal={isGlobal} />
             <Button onClick={salvarEdicoes} disabled={!Object.keys(edits).length}>
               <Save className="h-4 w-4 mr-1" />Salvar ({Object.keys(edits).length})
             </Button>
@@ -328,7 +344,7 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
                     >
                       <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__none">— Sem grupo —</SelectItem>
+                        {isGlobal && <SelectItem value="__none">— Sem grupo —</SelectItem>}
                         {grupos.filter(g => g.ativo || g.id === p.grupo_id).map(g => (
                           <SelectItem key={g.id} value={g.id}>{g.nome}</SelectItem>
                         ))}
@@ -376,7 +392,7 @@ function CadastroInicial({ participantes, grupos, refetch, session }: { particip
 
 /* ============================== ACOMPANHAMENTO MENSAL ============================== */
 
-function Acompanhamento({ participantes, medicoes, grupos, refetch }: { participantes: Participante[]; medicoes: Medicao[]; grupos: Grupo[]; refetch: () => void }) {
+function Acompanhamento({ participantes, medicoes, grupos, refetch, isGlobal }: { participantes: Participante[]; medicoes: Medicao[]; grupos: Grupo[]; refetch: () => void; isGlobal: boolean }) {
   const [filtroGrupo, setFiltroGrupo] = useState<string>("__todos");
   const meses = useMemo(() => Array.from(new Set(medicoes.map(m => m.mes_referencia))).sort(), [medicoes]);
   const [mesSel, setMesSel] = useState<string>("");
@@ -498,7 +514,7 @@ function Acompanhamento({ participantes, medicoes, grupos, refetch }: { particip
           </div>
           <div>
             <Label>Filtrar por grupo</Label>
-            <FiltroGrupoSelect value={filtroGrupo} onChange={setFiltroGrupo} grupos={grupos} className="w-[200px] h-10" />
+            <FiltroGrupoSelect value={filtroGrupo} onChange={setFiltroGrupo} grupos={grupos} className="w-[200px] h-10" isGlobal={isGlobal} />
           </div>
           <div className="border-l h-12 mx-2 hidden md:block" />
           <div><Label>Novo mês</Label><Input type="month" value={novoMes} onChange={e => setNovoMes(e.target.value)} /></div>
