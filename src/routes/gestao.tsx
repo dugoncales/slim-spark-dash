@@ -178,6 +178,11 @@ function CadastroInicial({ participantes, grupos, refetch, session, isGlobal }: 
       toast.error("Nome, altura, peso e mês de início são obrigatórios.");
       return;
     }
+    if (!isGlobal && !novoPart.grupo_id) {
+      toast.error("Selecione o grupo do participante.");
+      return;
+    }
+
     const imc = calcImc(peso, altura)!;
     const max = participantes.reduce((a, p) => Math.max(a, p.numero), 0);
     const { error } = await supabase.from("participantes").insert({
