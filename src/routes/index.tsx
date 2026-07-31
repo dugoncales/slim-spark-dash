@@ -55,6 +55,7 @@ import {
   SEM_GRUPO,
 } from "@/lib/dashboard-data";
 import { calcExamesGrupo, EXAMES_META, CATEGORIA_LABEL, type ExameCategoria } from "@/lib/exames";
+import { useGruposPermitidos } from "@/hooks/use-grupos-permitidos";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -101,6 +102,7 @@ function Dashboard() {
   const [coorte, setCoorte] = useState<string>("__all__");
   const [grupoSel, setGrupoSel] = useState<string[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const { isGlobal, semAcesso } = useGruposPermitidos();
 
   // Export flow:
   // 1) User clicks PDF / PNG in ExportMenu -> setDialogFormat(format) opens dialog.
@@ -253,7 +255,9 @@ function Dashboard() {
   const allMedicoes = data?.medicoes ?? [];
   const grupos = data?.grupos ?? [];
   const coorteAtiva = coorte !== "__all__" ? coorte : null;
-  const grupoIdsAtivos = grupoSel.length ? grupoSel : null;
+  const idsVisiveis = new Set<string>([...grupos.map((g) => g.id), ...(isGlobal ? [SEM_GRUPO] : [])]);
+  const grupoSelValido = grupoSel.filter((g) => idsVisiveis.has(g));
+  const grupoIdsAtivos = grupoSelValido.length ? grupoSelValido : null;
   const coortesDisponiveis = mesesDistintosInicio(allParticipantes);
   const participantes = aplicarFiltroGrupos(
     coorteAtiva ? allParticipantes.filter((p) => p.mes_inicio === coorteAtiva) : allParticipantes,
@@ -1268,6 +1272,7 @@ function Dashboard() {
                         </label>
                       );
                     })}
+                    {isGlobal && (
                     <label className="flex items-center gap-2 cursor-pointer text-sm border-t pt-2 mt-2">
                       <Checkbox
                         checked={grupoSel.includes(SEM_GRUPO)}
@@ -1277,6 +1282,7 @@ function Dashboard() {
                       />
                       <span className="text-muted-foreground">Sem grupo</span>
                     </label>
+                    )}
                   </div>
                 </PopoverContent>
               </Popover>
