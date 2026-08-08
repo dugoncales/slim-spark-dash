@@ -184,19 +184,36 @@ function CadastroInicial({ participantes, grupos, refetch, session, isGlobal }: 
     }
 
     const imc = calcImc(peso, altura)!;
-    const max = participantes.reduce((a, p) => Math.max(a, p.numero), 0);
-    const { error } = await supabase.from("participantes").insert({
-      numero: max + 1,
-      nome: novoPart.nome,
-      altura,
-      peso_inicial: peso,
-      imc_inicial: imc,
-      circunferencia_inicial: novoPart.circunferencia_inicial ? parseFloat(novoPart.circunferencia_inicial) : null,
-      mes_inicio: `${novoPart.mes_inicio}-01`,
-      grupo_id: novoPart.grupo_id || null,
-      sexo: (novoPart.sexo as "masculino" | "feminino" | "") || null,
-    });
+
+    // O número precisa ser único em TODA a base, mas a RLS só mostra os grupos
+    // do usuário — por isso pedimos o próximo número ao banco (e tentamos de
+    // novo caso outro cadastro simultâneo ocupe o número).
+    const localMax = participantes.reduce((a, p) => Math.max(a, p.numero), 0);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: proximo } = await (supabase.rpc as any)("next_participante_numero");
+    let numero = typeof proximo === "number" && proximo > 0 ? proximo : localMax + 1;
+
+    let error: { message: string; code?: string } | null = null;
+    for (let tentativa = 0; tentativa < 5; tentativa++) {
+      const res = await supabase.from("participantes").insert({
+        numero,
+        nome: novoPart.nome,
+        altura,
+        peso_inicial: peso,
+        imc_inicial: imc,
+        circunferencia_inicial: novoPart.circunferencia_inicial ? parseFloat(novoPart.circunferencia_inicial) : null,
+        mes_inicio: `${novoPart.mes_inicio}-01`,
+        grupo_id: novoPart.grupo_id || null,
+        sexo: (novoPart.sexo as "masculino" | "feminino" | "") || null,
+      });
+      error = res.error;
+      if (!error) break;
+      if (error.code !== "23505") break;
+      numero++;
+      error = null;
+    }
     if (error) { toast.error(error.message); return; }
+
     toast.success("Participante adicionado.");
     setNovoPart({ nome: "", altura: "", peso_inicial: "", circunferencia_inicial: "", mes_inicio: defaultMes, grupo_id: "", sexo: "" });
     refetch();

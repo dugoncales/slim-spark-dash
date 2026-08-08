@@ -362,6 +362,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      next_participante_numero: { Args: never; Returns: number }
       revoke_user_grupo: {
         Args: { _grupo_id: string; _target_user_id: string }
         Returns: undefined
