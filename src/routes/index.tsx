@@ -1092,18 +1092,27 @@ function Dashboard() {
           </thead>
           <tbody>
             {rows.map((r, i) => {
-              const total =
-                (r.m.consultas_endocrino ?? 0) +
-                (r.m.consultas_nutri ?? 0) +
-                (r.m.consultas_psico ?? 0) +
-                (r.m.consultas_edfisica ?? 0);
+              // Acumula todas as consultas realizadas do início até o mês selecionado.
+              const hist = allMedicoes.filter(
+                (m) =>
+                  m.participante_id === r.p.id &&
+                  (!mesSel || m.mes_referencia <= mesSel) &&
+                  (!r.p.mes_inicio || m.mes_referencia >= r.p.mes_inicio),
+              );
+              const acc = (k: keyof typeof r.m) =>
+                hist.reduce((a, m) => a + (Number(m[k] ?? 0) || 0), 0);
+              const endo = acc("consultas_endocrino");
+              const nutri = acc("consultas_nutri");
+              const psico = acc("consultas_psico");
+              const edf = acc("consultas_edfisica");
+              const total = endo + nutri + psico + edf;
               return (
                 <tr key={r.p.id} className="border-t hover:bg-muted/30">
                   <td className="px-4 py-2.5 font-medium">{displayName(r.p, i)}</td>
-                  <td className="px-4 py-2.5 text-center">{r.m.consultas_endocrino ?? 0}</td>
-                  <td className="px-4 py-2.5 text-center">{r.m.consultas_nutri ?? 0}</td>
-                  <td className="px-4 py-2.5 text-center">{r.m.consultas_psico ?? 0}</td>
-                  <td className="px-4 py-2.5 text-center">{r.m.consultas_edfisica ?? 0}</td>
+                  <td className="px-4 py-2.5 text-center">{endo}</td>
+                  <td className="px-4 py-2.5 text-center">{nutri}</td>
+                  <td className="px-4 py-2.5 text-center">{psico}</td>
+                  <td className="px-4 py-2.5 text-center">{edf}</td>
                   <td className="px-4 py-2.5 text-center font-semibold text-primary">{total}</td>
                 </tr>
               );
@@ -1111,8 +1120,12 @@ function Dashboard() {
           </tbody>
         </table>
       </div>
+      <div className="border-t px-4 py-2 text-xs text-muted-foreground">
+        Consultas realizadas acumuladas desde o início até {mesSel ? formatMes(mesSel) : "o mês selecionado"}.
+      </div>
     </Card>
   );
+
 
   // The extras block. Live view shows interactive Tabs; export view stacks all
   // three tables one after another so all of them land in the snapshot.
