@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GruposRouteImport } from './routes/grupos'
 import { Route as GestaoRouteImport } from './routes/gestao'
@@ -16,6 +17,11 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PacienteIdRouteImport } from './routes/paciente.$id'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/gestao': typeof GestaoRoute
   '/grupos': typeof GruposRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/paciente/$id': typeof PacienteIdRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/gestao': typeof GestaoRoute
   '/grupos': typeof GruposRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/paciente/$id': typeof PacienteIdRoute
 }
 export interface FileRoutesById {
@@ -70,13 +78,28 @@ export interface FileRoutesById {
   '/gestao': typeof GestaoRoute
   '/grupos': typeof GruposRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/paciente/$id': typeof PacienteIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/gestao' | '/grupos' | '/login' | '/paciente/$id'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/gestao'
+    | '/grupos'
+    | '/login'
+    | '/reset-password'
+    | '/paciente/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/gestao' | '/grupos' | '/login' | '/paciente/$id'
+  to:
+    | '/'
+    | '/admin'
+    | '/gestao'
+    | '/grupos'
+    | '/login'
+    | '/reset-password'
+    | '/paciente/$id'
   id:
     | '__root__'
     | '/'
@@ -84,6 +107,7 @@ export interface FileRouteTypes {
     | '/gestao'
     | '/grupos'
     | '/login'
+    | '/reset-password'
     | '/paciente/$id'
   fileRoutesById: FileRoutesById
 }
@@ -93,11 +117,19 @@ export interface RootRouteChildren {
   GestaoRoute: typeof GestaoRoute
   GruposRoute: typeof GruposRoute
   LoginRoute: typeof LoginRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   PacienteIdRoute: typeof PacienteIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -149,6 +181,7 @@ const rootRouteChildren: RootRouteChildren = {
   GestaoRoute: GestaoRoute,
   GruposRoute: GruposRoute,
   LoginRoute: LoginRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   PacienteIdRoute: PacienteIdRoute,
 }
 export const routeTree = rootRouteImport

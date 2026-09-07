@@ -15,7 +15,7 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "recuperar">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +28,14 @@ function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (mode === "signup") {
+      if (mode === "recuperar") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast.success("Enviamos um link de redefinição para o seu e-mail.");
+        setMode("login");
+      } else if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -59,7 +66,11 @@ function LoginPage() {
           />
           <h1 className="text-xl font-semibold mt-2">Painel de Acompanhamento</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {mode === "login" ? "Entre com seu e-mail" : "Crie sua conta"}
+            {mode === "login"
+              ? "Entre com seu e-mail"
+              : mode === "signup"
+                ? "Crie sua conta"
+                : "Informe seu e-mail para receber o link de redefinição"}
           </p>
         </div>
         <form onSubmit={submit} className="space-y-4">
@@ -74,21 +85,38 @@ function LoginPage() {
               autoComplete="email"
             />
           </div>
-          <div>
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-            />
-          </div>
+          {mode !== "recuperar" && (
+            <div>
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+              />
+            </div>
+          )}
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Aguarde..." : mode === "login" ? "Entrar" : "Cadastrar"}
+            {loading
+              ? "Aguarde..."
+              : mode === "login"
+                ? "Entrar"
+                : mode === "signup"
+                  ? "Cadastrar"
+                  : "Enviar link de redefinição"}
           </Button>
+          {mode === "login" && (
+            <button
+              type="button"
+              onClick={() => setMode("recuperar")}
+              className="w-full text-sm text-muted-foreground hover:text-primary"
+            >
+              Esqueci minha senha
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setMode(mode === "login" ? "signup" : "login")}
@@ -96,6 +124,7 @@ function LoginPage() {
           >
             {mode === "login" ? "Não tem conta? Cadastre-se" : "Já tem conta? Entrar"}
           </button>
+
         </form>
       </Card>
     </div>

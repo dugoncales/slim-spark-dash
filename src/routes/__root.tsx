@@ -135,7 +135,7 @@ function Shell() {
     if (hydrated) window.localStorage.setItem(SIDEBAR_STORAGE_KEY, open ? "1" : "0");
   }, [hydrated, open]);
 
-  if (path === "/login") return <Outlet />;
+  if (path === "/login" || path === "/reset-password") return <Outlet />;
   return (
     <SidebarProvider open={open} onOpenChange={setOpen}>
       <div className="min-h-screen flex w-full">
