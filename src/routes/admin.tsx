@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { ShieldCheck, Plus, Trash2, Layers } from "lucide-react";
 import type { Grupo } from "@/lib/dashboard-data";
+import { GestaoUsuarios } from "@/components/admin/GestaoUsuarios";
+
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -197,9 +199,12 @@ function AdminPage() {
         </div>
       </Card>
 
+      <GestaoUsuarios onChanged={() => usersQ.refetch()} />
+
       <GruposAdmin />
 
       <AcessoPorGrupo users={usersQ.data ?? []} onChanged={() => logsQ.refetch()} />
+
 
     </div>
   );
