@@ -197,9 +197,12 @@ function AdminPage() {
         </div>
       </Card>
 
+      <GestaoUsuarios onChanged={() => usersQ.refetch()} />
+
       <GruposAdmin />
 
       <AcessoPorGrupo users={usersQ.data ?? []} onChanged={() => logsQ.refetch()} />
+
 
     </div>
   );
